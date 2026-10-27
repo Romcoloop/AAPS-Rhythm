@@ -88,7 +88,11 @@ appwidget_%d|IntComposedKey|true
 aps_incarnation_no|DiaconnIntNonKey|true
 aps_link_to_docs|ApsIntentKey|false
 autoISF_max|DoubleKey|true
+autoISF_meal_window_breakfast|StringKey|true
+autoISF_meal_window_dinner|StringKey|true
+autoISF_meal_window_lunch|StringKey|true
 autoISF_min|DoubleKey|true
+autoISF_outside_meal_factor|DoubleKey|true
 autosens_adjust_targets|BooleanKey|true
 autosens_max|DoubleKey|true
 autosens_min|DoubleKey|true
@@ -98,6 +102,7 @@ autotune_circadian_ic_isf|BooleanKey|true
 autotune_default_tune_days|IntKey|true
 autotune_tune_insulin_curve|BooleanKey|true
 bgAccel_ISF_weight|DoubleKey|true
+bgBlend_ISF_weight|DoubleKey|true
 bgBrake_ISF_weight|DoubleKey|true
 bolus_amount_to_be_delivered|MedtrumDoubleNonKey|true
 bolus_password|StringKey|true

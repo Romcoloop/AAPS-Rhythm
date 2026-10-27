@@ -133,6 +133,33 @@ enum class StringKey(
         visibility = ElementVisibility.intEquals({ IntKey.ProtectionTypeBolus }, ProtectionType.CUSTOM_PIN.ordinal)
     ),
 
+    ApsAutoIsfMealWindowBreakfast(
+        key = "autoISF_meal_window_breakfast",
+        defaultValue = "",
+        title = KeysStrings.pref_title_autoisf_meal_window_breakfast,
+        summary = KeysStrings.pref_summary_autoisf_meal_window,
+        defaultedBySM = true,
+        validator = StringValidator.regex("^\\s*([01]?[0-9]|2[0-3]):[0-5][0-9]\\s*-\\s*([01]?[0-9]|2[0-3]):[0-5][0-9]\\s*$", "Use HH:MM-HH:MM, for example 06:30-09:00"),
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
+    ApsAutoIsfMealWindowLunch(
+        key = "autoISF_meal_window_lunch",
+        defaultValue = "",
+        title = KeysStrings.pref_title_autoisf_meal_window_lunch,
+        summary = KeysStrings.pref_summary_autoisf_meal_window,
+        defaultedBySM = true,
+        validator = StringValidator.regex("^\\s*([01]?[0-9]|2[0-3]):[0-5][0-9]\\s*-\\s*([01]?[0-9]|2[0-3]):[0-5][0-9]\\s*$", "Use HH:MM-HH:MM, for example 06:30-09:00"),
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
+    ApsAutoIsfMealWindowDinner(
+        key = "autoISF_meal_window_dinner",
+        defaultValue = "",
+        title = KeysStrings.pref_title_autoisf_meal_window_dinner,
+        summary = KeysStrings.pref_summary_autoisf_meal_window,
+        defaultedBySM = true,
+        validator = StringValidator.regex("^\\s*([01]?[0-9]|2[0-3]):[0-5][0-9]\\s*-\\s*([01]?[0-9]|2[0-3]):[0-5][0-9]\\s*$", "Use HH:MM-HH:MM, for example 06:30-09:00"),
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
     SafetyAge(key = "age", defaultValue = "adult", title = KeysStrings.pref_title_patient_age, preferenceType = PreferenceType.LIST, sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)),
     MaintenanceEmail(
         key = "maintenance_logs_email",

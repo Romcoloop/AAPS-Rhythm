@@ -49,6 +49,7 @@ import app.aaps.core.interfaces.utils.Round
 import app.aaps.core.keys.BooleanKey
 import app.aaps.core.keys.DoubleKey
 import app.aaps.core.keys.IntKey
+import app.aaps.core.keys.StringKey
 import app.aaps.core.keys.UnitDoubleKey
 import app.aaps.core.keys.interfaces.Preferences
 import app.aaps.core.keys.interfaces.TextRef.Companion.withArgs
@@ -141,6 +142,14 @@ open class OpenAPSAutoISFPlugin(
     private val bgAccel_ISF_weight; get() = preferences.get(DoubleKey.ApsAutoIsfBgAccelWeight)
     private val bgBrake_ISF_weight; get() = preferences.get(DoubleKey.ApsAutoIsfBgBrakeWeight)
     private val pp_ISF_weight; get() = preferences.get(DoubleKey.ApsAutoIsfPpWeight)
+    private val bgBlend_ISF_weight; get() = preferences.get(DoubleKey.ApsAutoIsfBgBlendWeight)
+    private val mealWindowTexts
+        get() = listOf(
+            preferences.get(StringKey.ApsAutoIsfMealWindowBreakfast),
+            preferences.get(StringKey.ApsAutoIsfMealWindowLunch),
+            preferences.get(StringKey.ApsAutoIsfMealWindowDinner)
+        )
+    private val outsideMealFactor; get() = preferences.get(DoubleKey.ApsAutoIsfOutsideMealFactor)
     private val lower_ISFrange_weight; get() = preferences.get(DoubleKey.ApsAutoIsfLowBgWeight)
     private val higher_ISFrange_weight; get() = preferences.get(DoubleKey.ApsAutoIsfHighBgWeight)
     private val dura_ISF_weight; get() = preferences.get(DoubleKey.ApsAutoIsfDuraWeight)
@@ -611,6 +620,13 @@ open class OpenAPSAutoISFPlugin(
             autosensData.autosensResult
         } else autosensResult.sensResult = "autosens disabled"
 
+        // usual meal times: outside them the meal factors (bgBlend, pp_ISF, acce_ISF above target) are weaker
+        val meal = MealWindows.calculate(mealWindowTexts, MidnightUtils.secondsFromMidnight() / 60, outsideMealFactor)
+        val mealScale = meal.scale
+        if (meal.windowCount > 0) {
+            if (meal.inWindow) consoleError.add("meal time: meal factors with full weight")
+            else consoleError.add("outside meal time: meal factors scaled by ${round(mealScale, 2)}")
+        }
         val dura05: Double = glucose_status.duraISFminutes
         val avg05: Double = glucose_status.duraISFaverage
         val maxISFReduction: Double = autoISF_max
@@ -657,7 +673,7 @@ open class OpenAPSAutoISFPlugin(
                 if (bg_acce < 0.0) {
                     acce_weight = bgBrake_ISF_weight
                 } else if (bg_acce > 0.0) {
-                    acce_weight = bgAccel_ISF_weight
+                    acce_weight = bgAccel_ISF_weight * mealScale             // only the part that adds insulin is scaled
                 }
             }
             acce_ISF = 1.0 + bg_acce * cap_weight * acce_weight * fit_share
@@ -667,7 +683,24 @@ open class OpenAPSAutoISFPlugin(
             }
         }
 
-        val bg_ISF = 1 + interpolate(100 - bg_off)
+        // blended BG (idea from Boost): bg_ISF may use a BG a bit higher than now when a rise is expected
+        val blend = BlendedBg.calculate(
+            glucose = glucose_status.glucose,
+            a0 = glucose_status.a0,
+            a1 = glucose_status.a1,
+            a2 = glucose_status.a2,
+            corrSqu = fit_corr,
+            targetBg = target_bg,
+            weight = bgBlend_ISF_weight * mealScale
+        )
+        if (bgBlend_ISF_weight * mealScale > 0.0) {
+            if (blend.lift > 0.0)
+                consoleError.add("bgBlend: BG for bg_ISF lifted from ${convert_bg(glucose_status.glucose)} to ${convert_bg(blend.bg)} (parabola in ${BlendedBg.HORIZON_MINUTES.toInt()}m: ${convert_bg(blend.predictedBg ?: blend.bg)})")
+            else
+                consoleError.add("bgBlend by-passed: ${blend.reason}")
+        }
+        val bg_off_blend = target_bg + 10.0 - blend.bg                               // bg_off only for bg_ISF, pp_ISF still uses real bg_off
+        val bg_ISF = 1 + interpolate(100 - bg_off_blend)
         consoleError.add("bg_ISF adaptation is ${round(bg_ISF, 2)}")
         var liftISF: Double
         var final_ISF: Double
@@ -695,7 +728,7 @@ open class OpenAPSAutoISFPlugin(
             }
 
             else                             -> {
-                pp_ISF = 1.0 + max(0.0, bg_delta * pp_ISF_weight)
+                pp_ISF = 1.0 + max(0.0, bg_delta * pp_ISF_weight * mealScale)
                 consoleError.add("pp_ISF adaptation is ${round(pp_ISF, 2)}")
                 if (pp_ISF != 1.0) {
                     sens_modified = true
@@ -977,6 +1010,11 @@ open class OpenAPSAutoISFPlugin(
                     DoubleKey.ApsAutoIsfLowBgWeight,
                     DoubleKey.ApsAutoIsfHighBgWeight,
                     DoubleKey.ApsAutoIsfPpWeight,
+                    DoubleKey.ApsAutoIsfBgBlendWeight,
+                    StringKey.ApsAutoIsfMealWindowBreakfast,
+                    StringKey.ApsAutoIsfMealWindowLunch,
+                    StringKey.ApsAutoIsfMealWindowDinner,
+                    DoubleKey.ApsAutoIsfOutsideMealFactor,
                     DoubleKey.ApsAutoIsfDuraWeight,
                     IntKey.ApsAutoIsfIobThPercent
                 )

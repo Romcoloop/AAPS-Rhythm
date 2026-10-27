@@ -296,6 +296,28 @@ enum class DoubleKey(
         unitType = UnitType.DOUBLE_3,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
+    ApsAutoIsfBgBlendWeight(
+        key = "bgBlend_ISF_weight",
+        defaultValue = 0.0,
+        min = 0.0,
+        max = 0.5,
+        title = KeysStrings.pref_title_bg_blend_weight,
+        summary = KeysStrings.openapsama_bgBlend_ISF_weight_summary,
+        defaultedBySM = true,
+        unitType = UnitType.DOUBLE_2,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
+    ApsAutoIsfOutsideMealFactor(
+        key = "autoISF_outside_meal_factor",
+        defaultValue = 1.0,
+        min = 0.0,
+        max = 1.0,
+        title = KeysStrings.pref_title_autoisf_outside_meal_factor,
+        summary = KeysStrings.pref_summary_autoisf_outside_meal_factor,
+        defaultedBySM = true,
+        unitType = UnitType.DOUBLE_2,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
     ApsAutoIsfDuraWeight(
         key = "dura_ISF_weight",
         defaultValue = 0.0,

@@ -405,6 +405,14 @@
     <string name="openapsama_smb_delivery_ratio_bg_range_summary">Default value: 0. The linearly increasing SMB delivery ratio is mapped to the glucose range [target_bg, target_bg+bg_range].\nAt target_bg the SMB ratio is smb_delivery_ratio_min, at target_bg+bg_range it is smb_delivery_ratio_max\nWith 0 the linearly increasing SMB ratio is disabled and the fixed smb_delivery_ratio is used.</string>
     <string name="pref_title_pp_weight">Post-prandial ISF weight</string>
     <string name="openapsama_pp_ISF_weight_summary">This is the weight applied while glucose is rising and which strengthens ISF thereby potentially increasing insulin delivery.\n\nThe default value 0.0 effectively shuts off this effect.</string>
+    <string name="pref_title_bg_blend_weight">Blended BG ISF weight</string>
+    <string name="openapsama_bgBlend_ISF_weight_summary">Part of the BG rise expected in the next 20 minutes that bg_ISF already uses now. This makes bg_ISF react earlier when BG rises fast. Only used at or above target, never when BG falls. The lift is limited to 36 mg/dl (2 mmol/l).\n\nThe default value 0.0 effectively shuts off this effect.</string>
+    <string name="pref_title_autoisf_meal_window_breakfast">Breakfast time</string>
+    <string name="pref_title_autoisf_meal_window_lunch">Lunch time</string>
+    <string name="pref_title_autoisf_meal_window_dinner">Dinner time</string>
+    <string name="pref_summary_autoisf_meal_window">Usual meal time as HH:MM-HH:MM, for example 06:30-09:00. Inside this time the meal factors (blended BG, post-prandial and acceleration above target) work with full weight. Leave empty to not use this window.</string>
+    <string name="pref_title_autoisf_outside_meal_factor">Meal factors outside meal times</string>
+    <string name="pref_summary_autoisf_outside_meal_factor">Multiplier for the blended BG, post-prandial and acceleration (above target) weights outside all meal times. 1.0 = no change, 0.5 = half, 0.0 = off. Braking when BG falls is never reduced. Used only when at least one meal time is set.</string>
     <string name="pref_title_dura_weight">Duration ISF weight</string>
     <string name="openapsama_dura_ISF_weight_summary">This is the weight applied during longer lasting, elevated glucose plateaus and which strengthens ISF thereby potentially increasing insulin delivery.\n\nThe default value 0.0 effectively shuts off this effect.</string>
     <string name="pref_title_smb_delivery_ratio">SMB delivery ratio</string>
