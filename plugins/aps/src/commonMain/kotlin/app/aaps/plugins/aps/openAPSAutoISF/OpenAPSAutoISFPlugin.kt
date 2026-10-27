@@ -66,6 +66,7 @@ import app.aaps.plugins.aps.ApsStrings
 import app.aaps.plugins.aps.events.EventOpenAPSUpdateGui
 import app.aaps.plugins.aps.events.EventResetOpenAPSGui
 import app.aaps.plugins.aps.keys.ApsIntentKey
+import app.aaps.plugins.aps.openAPSAutoISF.logAnalysis.AutoIsfLogAnalysis
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
@@ -102,7 +103,8 @@ open class OpenAPSAutoISFPlugin(
     private val profiler: Profiler,
     private val glucoseStatusCalculatorAutoIsf: GlucoseStatusCalculatorAutoIsf,
     private val apsResultProvider: () -> APSResult,
-    private val ch: ConcentrationHelper
+    private val ch: ConcentrationHelper,
+    private val autoIsfLogAnalysis: AutoIsfLogAnalysis
 ) : PluginBaseWithPreferences(
     PluginDescription()
         .mainType(PluginType.APS)
@@ -111,7 +113,8 @@ open class OpenAPSAutoISFPlugin(
                 apsPlugin = plugin as APS,
                 rxBus = rxBus,
                 rh = rh,
-                dateUtil = dateUtil
+                dateUtil = dateUtil,
+                logAnalysis = autoIsfLogAnalysis.takeIf { it.available }
             )
         }
         .icon(IcPluginOpenAPS)

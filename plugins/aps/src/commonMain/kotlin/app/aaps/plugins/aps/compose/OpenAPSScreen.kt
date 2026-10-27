@@ -39,7 +39,9 @@ import app.aaps.plugins.aps.ApsStrings
 @Composable
 fun OpenAPSScreen(
     state: OpenAPSUiState,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    /** Extra content above the algorithm output. AutoISF puts its log analysis card here. */
+    header: (@Composable () -> Unit)? = null
 ) {
     // Track expanded state per section; key = title
     val expandedState = remember { mutableStateMapOf<Int, Boolean>() }
@@ -56,6 +58,8 @@ fun OpenAPSScreen(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            header?.invoke()
+
             // Status message when no data
             if (state.sections.isEmpty() && state.statusMessage.isNotEmpty()) {
                 Text(
@@ -187,7 +191,7 @@ private fun CollapsibleSection(
 }
 
 @Composable
-private fun KeyValueRowItem(row: KeyValueRow) {
+internal fun KeyValueRowItem(row: KeyValueRow) {
     if (row.key.isEmpty()) {
         // Full-width text (e.g. constraints, script debug lines)
         Text(

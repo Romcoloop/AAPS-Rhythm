@@ -113,4 +113,53 @@
     <string name="autoISF_settings_title">AutoISF settings</string>
     <string name="smb_delivery_settings_title">SMB delivery settings</string>
 
+    <!--    autoISF log analysis -->
+    <string name="autoisf_log_analysis">AutoISF log analysis</string>
+    <string name="autoisf_log_analysis_info">Reads the AAPS log and looks at what AutoISF did. The suggestions are careful, but they are only a help: you decide. Change one setting at a time and watch it for a few days.</string>
+    <string name="autoisf_log_days" comment="Button to choose the period. %1$d=number of days. Example: 3 d">%1$d d</string>
+    <string name="autoisf_log_analyze">Analyze</string>
+    <string name="autoisf_log_running">Reading the logs…</string>
+    <string name="autoisf_log_no_runs">No AutoISF loop runs found in the log for this period.</string>
+    <string name="autoisf_log_read_error">The log could not be read: %1$s</string>
+    <string name="autoisf_log_summary">Summary</string>
+    <string name="autoisf_log_period">Period</string>
+    <string name="autoisf_log_period_value" comment="%1$s=start date and time, %2$s=end date and time">%1$s – %2$s</string>
+    <string name="autoisf_log_runs">Loop runs</string>
+    <string name="autoisf_log_runs_value" comment="%1$d=number of loop runs, %2$s=hours, already formatted with unit. Example: 576 (48.00 h), 21 files">%1$d (%2$s), %3$d files</string>
+    <string name="autoisf_log_mean_bg">Mean BG</string>
+    <string name="autoisf_log_in_range">In range</string>
+    <string name="autoisf_log_low">Low</string>
+    <string name="autoisf_log_very_low">Very low</string>
+    <string name="autoisf_log_high">High</string>
+    <string name="autoisf_log_smbs">SMBs</string>
+    <string name="autoisf_log_smbs_value" comment="%1$d=number of SMBs, %2$s=insulin, already formatted. Example: 42 (12.35 U)">%1$d (%2$s U)</string>
+    <string name="autoisf_log_smbs_at_max_bolus">SMBs as big as maxBolus</string>
+    <string name="autoisf_log_max_hits">Runs cut by autoISF_max</string>
+    <string name="autoisf_log_even_target">Runs with SMB from even target</string>
+    <string name="autoisf_log_lows">Lows</string>
+    <string name="autoisf_log_lows_value" comment="%1$d=number of lows, %2$d=how many of them came after an SMB. Example: 3 (2 after SMB)">%1$d (%2$d after SMB)</string>
+    <string name="autoisf_log_predicted_lows">SMB stopped for a predicted low after an SMB</string>
+    <string name="autoisf_log_not_enough_data" comment="%1$s=hours analyzed, %2$s=hours needed, both already formatted with unit. Example: 0.42 h, 12.00 h">Only %1$s of loop runs with the same settings. Suggestions need at least %2$s. Choose a longer period or wait.</string>
+    <string name="autoisf_log_settings_changed" comment="%1$s=date and time of the change">AutoISF settings were changed at %1$s. Only the time after this change is used.</string>
+    <string name="autoisf_log_events">SMBs before a low</string>
+    <string name="autoisf_log_event_low" comment="%1$s=time of the SMB, %2$s=SMB in U, %3$s=BG at the SMB with unit, %4$s=ISF factor, %5$s=which factor drove it, %6$s=lowest BG with unit, %7$s=time of the low. Example: 14:09 SMB 0.95 U at 9.7 mmol/l, ISF ×1.31 (bg_ISF) → low 3.6 mmol/l at 16:20">%1$s SMB %2$s U at %3$s, ISF ×%4$s (%5$s) → low %6$s at %7$s</string>
+    <string name="autoisf_log_event_predicted" comment="Same as autoisf_log_event_low, but BG did not go low: the loop predicted a low and stopped SMB. %6$s=BG at that time with unit, %7$s=time">%1$s SMB %2$s U at %3$s, ISF ×%4$s (%5$s) → SMB stopped, low predicted at %7$s (BG %6$s)</string>
+    <string name="autoisf_log_driver_max">autoISF_max limit</string>
+    <string name="autoisf_log_driver_none">no factor</string>
+    <string name="autoisf_log_suggestions">Suggestions</string>
+    <string name="autoisf_log_no_suggestions">No change suggested for this period.</string>
+    <string name="autoisf_log_change" comment="%1$s=current value, %2$s=suggested value. Example: 1.60 → 1.50">%1$s → %2$s</string>
+    <string name="autoisf_log_reason_max_limited">%1$d of %2$d SMBs before a low (or a predicted low) were cut by autoISF_max. A lower limit gives smaller SMBs in this case.</string>
+    <string name="autoisf_log_reason_acce">%1$d of %2$d SMBs before a low (or a predicted low) were driven by acce_ISF: BG rose fast, but the rise did not go on.</string>
+    <string name="autoisf_log_reason_bg">%1$d of %2$d SMBs before a low (or a predicted low) were driven by bg_ISF: high BG alone made ISF stronger.</string>
+    <string name="autoisf_log_reason_ratio">%1$d of %2$d SMBs before a low (or a predicted low) used the maximum SMB delivery ratio.</string>
+    <string name="autoisf_log_reason_max_bolus">%1$d of %2$d SMBs before a low (or a predicted low) were as big as maxBolus allowed. smb_max_range_extension makes maxBolus bigger.</string>
+    <string name="autoisf_log_reason_highs_max">No lows in this period. In %1$d of %2$d high runs autoISF_max cut the factor.</string>
+    <string name="autoisf_log_reason_highs_bg">No lows in this period. In %1$d of %2$d high runs bg_ISF was the strongest factor.</string>
+    <string name="autoisf_log_apply">Apply</string>
+    <string name="autoisf_log_applied">Applied</string>
+    <string name="autoisf_log_apply_confirm" comment="%1$s=name of the setting, %2$s=current value, %3$s=new value">Change %1$s from %2$s to %3$s? The loop uses the new value from its next run.</string>
+    <string name="autoisf_log_saved">Saved. Run the analysis again after a few days.</string>
+    <string name="autoisf_log_changed_meanwhile">This setting was changed after the analysis. Nothing was saved. Run the analysis again.</string>
+
 </resources>
