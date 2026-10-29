@@ -1,6 +1,6 @@
 name: AutoISF APK
 
-# Builds a signed AAPS APK from this repository and keeps it as a download on the run page.
+# Builds signed AAPS APKs (phone + wear) from this repository and keeps it as a download on the run page.
 # Start it by hand: Actions -> AutoISF APK -> Run workflow.
 #
 # Needs four repository secrets (Settings -> Secrets and variables -> Actions):
@@ -112,7 +112,7 @@ jobs:
           S_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           S_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          ./gradlew $GRADLE_ARGS ":app:assemble${BUILD_VARIANT}" \
+          ./gradlew $GRADLE_ARGS ":app:assemble${BUILD_VARIANT}" ":wear:assemble${BUILD_VARIANT}" \
             -Pandroid.injected.signing.store.file="$RUNNER_TEMP/keystore/keystore.jks" \
             -Pandroid.injected.signing.store.password="$S_KEYSTORE_PASSWORD" \
             -Pandroid.injected.signing.key.alias="$S_KEY_ALIAS" \
@@ -127,6 +127,7 @@ jobs:
           NAME="aaps-autoisf-${STAMP}-${SHORT_SHA}-${BUILD_VARIANT}"
           mkdir -p out
           cp app/build/outputs/apk/$FLAVOR/$TYPE/*.apk "out/$NAME.apk"
+          cp wear/build/outputs/apk/$FLAVOR/$TYPE/*.apk "out/$NAME-wear.apk"
           echo "APK_NAME=$NAME" >> "$GITHUB_ENV"
           ls -l out
 
