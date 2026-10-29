@@ -8,7 +8,6 @@ import app.aaps.core.interfaces.constraints.ConstraintsChecker
 import app.aaps.core.interfaces.db.PersistenceLayer
 import app.aaps.core.interfaces.iob.GlucoseStatusProvider
 import app.aaps.core.interfaces.plugin.EnforcedState
-import app.aaps.core.interfaces.profiling.Profiler
 import app.aaps.core.keys.BooleanKey
 import app.aaps.core.keys.DoubleKey
 import app.aaps.core.keys.IntKey
@@ -29,7 +28,6 @@ class OpenAPSAutoISFPluginTest : TestBaseWithProfile() {
     @Mock lateinit var glucoseStatusProvider: GlucoseStatusProvider
     @Mock lateinit var determineBasalSMB: DetermineBasalAutoISF
     @Mock lateinit var bgQualityCheck: BgQualityCheck
-    @Mock lateinit var profiler: Profiler
     @Mock lateinit var autoIsfLogAnalysis: AutoIsfLogAnalysis
     private lateinit var openAPSAutoISFPlugin: OpenAPSAutoISFPlugin
 
@@ -37,7 +35,7 @@ class OpenAPSAutoISFPluginTest : TestBaseWithProfile() {
         openAPSAutoISFPlugin = OpenAPSAutoISFPlugin(
             aapsLogger, rxBus, constraintChecker, rh, profileFunction, profileUtil, config, activePlugin,
             iobCobCalculator, hardLimits, preferences, dateUtil, processedTbrEbData, persistenceLayer, glucoseStatusProvider,
-            bgQualityCheck, notificationManager, determineBasalSMB, profiler,
+            bgQualityCheck, notificationManager, determineBasalSMB,
             GlucoseStatusCalculatorAutoIsf(aapsLogger, iobCobCalculator, dateUtil, decimalFormatter, deltaCalculator), { apsResultProvider() }, ch,
             autoIsfLogAnalysis
         )
