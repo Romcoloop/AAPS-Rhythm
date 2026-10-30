@@ -144,19 +144,30 @@ class AutoIsfLogAnalyzer {
      * @param runs runs from [AutoIsfLogParser], in any order
      * @param fromTime only runs at or after this time are used
      * @param current current values of the settings, as stored in preferences
+     * @param minHours below this many hours of runs only the facts are shown, no suggestions
+     * @param settingsScope which runs count when looking for a change of the settings. For a meal
+     *   slot only the runs inside the meal time use the slot values; the runs of the tail use the
+     *   global values and must not count as a change.
      */
-    fun analyze(runs: List<AutoIsfLogRun>, fromTime: Long, current: Map<AutoIsfParam, Double>): AutoIsfLogReport {
+    fun analyze(
+        runs: List<AutoIsfLogRun>,
+        fromTime: Long,
+        current: Map<AutoIsfParam, Double>,
+        minHours: Double = MIN_HOURS,
+        settingsScope: (AutoIsfLogRun) -> Boolean = { true }
+    ): AutoIsfLogReport {
         val inPeriod = oneRunPerBg(runs.filter { it.timestamp >= fromTime }.sortedBy { it.timestamp })
 
         // Use only the runs after the last change of AutoISF settings. Runs before it say nothing
         // about the values in use now.
         var settingsChangedAt: Long? = null
         var startIndex = 0
-        for (i in inPeriod.indices.reversed()) {
-            val settings = inPeriod[i].settings ?: continue
-            val newer = inPeriod.subList(i + 1, inPeriod.size).firstOrNull { it.settings != null }?.settings ?: continue
+        val scoped = inPeriod.withIndex().filter { settingsScope(it.value) && it.value.settings != null }
+        for (k in scoped.indices.reversed()) {
+            val settings = scoped[k].value.settings ?: continue
+            val newer = scoped.getOrNull(k + 1)?.value?.settings ?: continue
             if (settingsDiffer(settings, newer)) {
-                startIndex = i + 1
+                startIndex = scoped[k + 1].index
                 settingsChangedAt = inPeriod[startIndex].timestamp
                 break
             }
@@ -165,7 +176,7 @@ class AutoIsfLogAnalyzer {
 
         val events = smbEvents(used)
         val stats = stats(used, events)
-        val enoughData = stats.hours >= MIN_HOURS
+        val enoughData = stats.hours >= minHours
         val suggestions = if (enoughData) suggestions(used, stats, events, current) else emptyList()
         return AutoIsfLogReport(
             fromTime = used.firstOrNull()?.timestamp ?: fromTime,

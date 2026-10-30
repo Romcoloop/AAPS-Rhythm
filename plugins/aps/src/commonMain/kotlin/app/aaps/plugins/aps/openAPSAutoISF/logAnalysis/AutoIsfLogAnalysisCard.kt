@@ -1,5 +1,6 @@
 package app.aaps.plugins.aps.openAPSAutoISF.logAnalysis
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,12 +13,14 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import app.aaps.core.keys.interfaces.TextRef
 import app.aaps.core.ui.CoreUiStrings
 import app.aaps.core.ui.compose.AapsCard
 import app.aaps.core.ui.compose.AapsSpacing
@@ -25,12 +28,14 @@ import app.aaps.core.ui.compose.dialogs.OkCancelDialog
 import app.aaps.core.ui.compose.stringResource
 import app.aaps.plugins.aps.ApsStrings
 import app.aaps.plugins.aps.compose.KeyValueRowItem
+import app.aaps.plugins.aps.openAPSAutoISF.AutoIsfSlots
 
 /** The "AutoISF log analysis" card on the AutoISF plugin screen. */
 @Composable
 fun AutoIsfLogAnalysisCard(
     state: AutoIsfLogUiState,
     onDaysChange: (Int) -> Unit,
+    onSlotChange: (AutoIsfSlots.Slot?) -> Unit,
     onAnalyze: () -> Unit,
     onApplyClick: (AutoIsfSuggestionUi) -> Unit,
     onApplyConfirm: () -> Unit,
@@ -72,6 +77,26 @@ fun AutoIsfLogAnalysisCard(
                     }
                 }
             }
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(AapsSpacing.medium),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                FilterChip(
+                    selected = state.slot == null,
+                    onClick = { onSlotChange(null) },
+                    enabled = !state.running,
+                    label = { Text(stringResource(ApsStrings.autoisf_slot_all)) }
+                )
+                AutoIsfSlots.Slot.entries.forEach { slot ->
+                    FilterChip(
+                        selected = state.slot == slot,
+                        onClick = { onSlotChange(slot) },
+                        enabled = !state.running,
+                        label = { Text(stringResource(slotLabel(slot))) }
+                    )
+                }
+            }
 
             if (state.running) {
                 Text(
@@ -95,8 +120,23 @@ fun AutoIsfLogAnalysisCard(
                     }
                 }
 
+                if (state.meals.isNotEmpty()) {
+                    SectionTitle(stringResource(ApsStrings.autoisf_log_meals_section))
+                    state.meals.forEachIndexed { index, row ->
+                        KeyValueRowItem(row)
+                        if (index < state.meals.lastIndex) ItemDivider()
+                    }
+                }
+
                 state.notes.forEach { note ->
                     Text(text = note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
+                }
+
+                if (state.mealLines.isNotEmpty()) {
+                    SectionTitle(stringResource(ApsStrings.autoisf_log_meal_lines))
+                    state.mealLines.forEach { line ->
+                        Text(text = line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
+                    }
                 }
 
                 if (state.events.isNotEmpty()) {
@@ -158,6 +198,12 @@ private fun SuggestionItem(item: AutoIsfSuggestionUi, onApplyClick: () -> Unit) 
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
+}
+
+private fun slotLabel(slot: AutoIsfSlots.Slot): TextRef = when (slot) {
+    AutoIsfSlots.Slot.BREAKFAST -> ApsStrings.autoisf_slot_breakfast
+    AutoIsfSlots.Slot.LUNCH     -> ApsStrings.autoisf_slot_lunch
+    AutoIsfSlots.Slot.DINNER    -> ApsStrings.autoisf_slot_dinner
 }
 
 @Composable

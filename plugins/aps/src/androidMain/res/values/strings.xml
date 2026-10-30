@@ -170,6 +170,25 @@
     <string name="autoisf_log_applied">Applied</string>
     <string name="autoisf_log_apply_confirm" comment="%1$s=name of the setting, %2$s=current value, %3$s=new value">Change %1$s from %2$s to %3$s? The loop uses the new value from its next run.</string>
     <string name="autoisf_log_saved">Saved. Run the analysis again after a few days.</string>
+    <string name="autoisf_slot_all">All</string>
+    <string name="autoisf_log_apply_confirm_slot" comment="%1$s=name of the setting, %2$s=current value, %3$s=new value, %4$s=name of the meal slot. Example: Change autoISF max from 1.60 to 1.70 in Lunch slot?">Change %1$s from %2$s to %3$s in %4$s? The loop will use the new value at the next run inside this meal time.</string>
+    <string name="autoisf_log_no_meal_time">This meal slot has no meal time. Set it in the AutoISF settings (for example 11:00-14:00).</string>
+    <string name="autoisf_log_meals_section">Meals (meal time + 3 h)</string>
+    <string name="autoisf_log_meals">Meals used</string>
+    <string name="autoisf_log_meals_value" comment="%1$d=meals used, %2$d=meals left out because a temp target was active. Example: 5 (1 left out, temp target)">%1$d (%2$d left out, temp target)</string>
+    <string name="autoisf_log_meal_peak">Peak above target, mean</string>
+    <string name="autoisf_log_meal_time_to_peak">Time to peak, median</string>
+    <string name="autoisf_log_meal_above" comment="%1$s=how far above target, with sign, in the user's BG unit. Example: Above target +2.0, mean per meal">Above target %1$s, mean per meal</string>
+    <string name="autoisf_log_meal_lows">Meals with a low</string>
+    <string name="autoisf_log_meal_lows_value" comment="%1$d=meals with a low, %2$d=meals used. Example: 1 of 5">%1$d of %2$d</string>
+    <string name="autoisf_log_meal_end">BG above target at the end, mean</string>
+    <string name="autoisf_log_meal_smb">SMB per meal, mean</string>
+    <string name="autoisf_log_meal_max_limited">Runs cut by autoISF_max</string>
+    <string name="autoisf_log_meal_smb_at_max">SMBs as big as maxBolus</string>
+    <string name="autoisf_log_meal_driver">Strongest factor</string>
+    <string name="autoisf_log_meal_lines">Meal by meal</string>
+    <string name="autoisf_log_meal_line" comment="%1$s=date, %2$s=time the meal began, %3$s=peak BG with unit, %4$s=time of the peak, %5$s=BG at the end with unit, %6$s=SMB insulin, %7$s=Yes or No. Example: 30.10. 12:05: peak 12.4 mmol/l at 13:20, end 7.1 mmol/l, SMB 1.40 U, low: No">%1$s %2$s: peak %3$s at %4$s, end %5$s, SMB %6$s U, low: %7$s</string>
+    <string name="autoisf_log_meal_line_excluded" comment="Same as autoisf_log_meal_line, but the meal is not used because a temp target was active.">%1$s %2$s: peak %3$s at %4$s, end %5$s, SMB %6$s U, low: %7$s (temp target, not used)</string>
     <string name="autoisf_log_changed_meanwhile">This setting was changed after the analysis. Nothing was saved. Run the analysis again.</string>
 
 </resources>

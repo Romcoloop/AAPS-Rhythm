@@ -33,7 +33,16 @@ data class AutoIsfLogRun(
     val smbStoppedByMinGuard: Boolean,
     val maxBolus: Double?,
     /** AutoISF settings from the profile line logged just before this run, or null if none was seen. */
-    val settings: Map<String, Double>?
+    val settings: Map<String, Double>?,
+    /** Carbs on board in g at the run, null when the line did not have it. */
+    val cob: Double? = null,
+    /** A temporary target was active (from the profile line before this run). */
+    val tempTarget: Boolean = false,
+    /**
+     * Meal slot the run used, from the "AutoISF slot: ..." line: "Breakfast", "Lunch", "Dinner",
+     * "none" (slots on, outside all meal times) or null (line not present, older build or slots off).
+     */
+    val slotName: String? = null
 ) {
 
     /** The SMB was as big as `maxBolus` allowed (the last bolus step is lost by rounding down). */
@@ -72,12 +81,16 @@ class AutoIsfLogParser {
     val runs: List<AutoIsfLogRun> get() = _runs
 
     private var lastSettings: Map<String, Double>? = null
+    private var lastTempTarget = false
     private var lastBgTimestamp: Long? = null
 
     fun accept(line: String) {
         when {
             line.contains(RESULT_MARK)  -> parseResult(line)?.let { _runs.add(it) }
-            line.contains(PROFILE_MARK) -> lastSettings = parseSettings(line)
+            line.contains(PROFILE_MARK) -> {
+                lastSettings = parseSettings(line)
+                lastTempTarget = line.contains(TEMP_TARGET_SET)
+            }
             line.contains(GLUCOSE_MARK) -> lastBgTimestamp = GLUCOSE_DATE.find(line)?.groupValues?.get(1)?.toLongOrNull()
         }
     }
@@ -104,7 +117,10 @@ class AutoIsfLogParser {
             smbRatioAtMax = line.contains(RATIO_AT_MAX),
             smbStoppedByMinGuard = MIN_GUARD_STOP.containsMatchIn(line),
             maxBolus = number(MAX_BOLUS, line),
-            settings = lastSettings
+            settings = lastSettings,
+            cob = number(COB, line),
+            tempTarget = lastTempTarget,
+            slotName = SLOT.find(line)?.groupValues?.get(1)
         )
     }
 
@@ -159,6 +175,9 @@ class AutoIsfLogParser {
         private val PP_ISF = Regex("pp_ISF adaptation is $NUM")
         private val DURA_ISF = Regex("dura_ISF adaptation is $NUM")
         private val MAX_BOLUS = Regex("maxBolus: $NUM")
+        private val COB = Regex(", COB=$NUM, IOB=")
+        private val SLOT = Regex("AutoISF slot: ([A-Za-z]+)")
+        private const val TEMP_TARGET_SET = "temptargetSet=true"
         private val EVEN_TARGET = Regex("SMB enabled; current target \\S+ (has|is) even")
         private val MIN_GUARD_STOP = Regex("minGuardBG \\S+ projected below \\S+ - disabling SMB")
         private const val LIMITED_BY_MAX = "limited by autoISF_max"

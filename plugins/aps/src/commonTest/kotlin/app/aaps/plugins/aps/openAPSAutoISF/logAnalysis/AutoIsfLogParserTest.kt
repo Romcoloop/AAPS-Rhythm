@@ -51,6 +51,34 @@ class AutoIsfLogParserTest {
     }
 
     @Test
+    fun readsCobTempTargetAndSlot() {
+        val parser = AutoIsfLogParser()
+        sampleLines.forEach { parser.accept(it) }
+        val run = parser.runs[0]
+        assertEquals(0.0, run.cob)
+        assertFalse(run.tempTarget)
+        assertNull(run.slotName)
+
+        // a run of a newer build: temp target set, carbs on board, inside the dinner slot
+        parser.accept("18:05:00.000 [w] D/APS: [OpenAPSAutoISFPlugin.invoke():441]: Profile:            OapsProfileAutoIsf(dia=0.0, temptargetSet=true, autoISF_max=1.5, profile_percentage=100)")
+        parser.accept(
+            "18:05:00.100 [w] D/APS: [OpenAPSAutoISFPlugin.invoke():479]: Result: RT(algorithm=AUTO_ISF, runningDynamicIsf=true, timestamp=1793120700000, temp=absolute, bg=150.0, " +
+                "reason=COB: 40, predBGs=Predictions(IOB=[150], COB=null), COB=40.0, IOB=1.2, consoleError=[AutoISF slot: Dinner (17:00-20:00), final ISF factor is 1.2 ])"
+        )
+        parser.accept(
+            "21:05:00.100 [w] D/APS: [OpenAPSAutoISFPlugin.invoke():479]: Result: RT(algorithm=AUTO_ISF, runningDynamicIsf=true, timestamp=1793131500000, temp=absolute, bg=120.0, " +
+                "reason=COB: 0, predBGs=Predictions(IOB=[120], COB=null), COB=0.0, IOB=0.2, consoleError=[AutoISF slot: none, global values, final ISF factor is 1.0 ])"
+        )
+        assertEquals(4, parser.runs.size)
+        val dinner = parser.runs[2]
+        assertEquals(40.0, dinner.cob)
+        assertTrue(dinner.tempTarget)
+        assertEquals("Dinner", dinner.slotName)
+        assertEquals(1.5, assertNotNull(dinner.settings).getValue("autoISF_max"), 1e-6)
+        assertEquals("none", parser.runs[3].slotName)
+    }
+
+    @Test
     fun readsTheSettingsOfTheRun() {
         val parser = AutoIsfLogParser()
         sampleLines.forEach { parser.accept(it) }
