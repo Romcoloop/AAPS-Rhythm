@@ -190,6 +190,7 @@
     <string name="autoisf_log_meal_line" comment="%1$s=date, %2$s=time the meal began, %3$s=peak BG with unit, %4$s=time of the peak, %5$s=BG at the end with unit, %6$s=SMB insulin with unit, %7$s=Yes or No. Example: 30.10. 12:05: peak 12.4 mmol/l at 13:20, end 7.1 mmol/l, SMB 1.40 U, low: No">%1$s %2$s: peak %3$s at %4$s, end %5$s, SMB %6$s, low: %7$s</string>
     <string name="autoisf_log_meal_line_temp_target" comment="%1$s=the meal line (autoisf_log_meal_line). The meal is not used because a temp target was active.">%1$s (temp target, not used)</string>
     <string name="autoisf_log_meal_line_incomplete" comment="%1$s=the meal line (autoisf_log_meal_line). The meal is not used because the log does not cover all of it, for example it is still going on.">%1$s (incomplete, not used)</string>
+    <string name="autoisf_log_meals_all_left_out">All meals in this period are incomplete or had a temp target, so there is nothing to rate yet. Try a longer period, or come back when the meal is over.</string>
     <string name="autoisf_log_slots_off">Meal slot settings are off, so the loop uses the global values. Switch them on in the AutoISF settings to get suggestions for this slot.</string>
     <string name="autoisf_log_changed_meanwhile">This setting was changed after the analysis. Nothing was saved. Run the analysis again.</string>
 

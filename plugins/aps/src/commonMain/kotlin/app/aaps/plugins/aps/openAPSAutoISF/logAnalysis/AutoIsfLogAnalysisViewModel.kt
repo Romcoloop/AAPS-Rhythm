@@ -161,8 +161,11 @@ class AutoIsfLogAnalysisViewModel(
         )
 
         val mealStats = result.mealStats
-        val meals = if (result.slot == null || mealStats == null) emptyList() else listOf(
-            KeyValueRow(rh.gs(ApsStrings.autoisf_log_meals), rh.gs(ApsStrings.autoisf_log_meals_value, mealStats.meals, mealStats.excluded)),
+        val mealsUsedRow = mealStats?.let { KeyValueRow(rh.gs(ApsStrings.autoisf_log_meals), rh.gs(ApsStrings.autoisf_log_meals_value, it.meals, it.excluded)) }
+        val meals = if (result.slot == null || mealStats == null) emptyList()
+        else if (mealStats.meals == 0) listOfNotNull(mealsUsedRow)
+        else listOfNotNull(
+            mealsUsedRow,
             KeyValueRow(rh.gs(ApsStrings.autoisf_log_meal_peak), delta(mealStats.meanPeakAboveTarget)),
             KeyValueRow(rh.gs(ApsStrings.autoisf_log_meal_time_to_peak), rh.gs(CoreUiStrings.format_mins, mealStats.medianMinutesToPeak)),
             KeyValueRow(rh.gs(ApsStrings.autoisf_log_meal_above, delta(AutoIsfMealAnalyzer.ABOVE_1_MGDL)), minutes(mealStats.meanMinutesAbove1)),
@@ -195,7 +198,7 @@ class AutoIsfLogAnalysisViewModel(
 
         val minHours = if (result.slot == null) AutoIsfLogAnalyzer.MIN_HOURS else AutoIsfLogAnalysis.MIN_HOURS_SLOT
         val notes = buildList {
-            if (stats.runs == 0) add(rh.gs(ApsStrings.autoisf_log_no_runs))
+            if (stats.runs == 0) add(rh.gs(if (result.meals.isEmpty()) ApsStrings.autoisf_log_no_runs else ApsStrings.autoisf_log_meals_all_left_out))
             if (result.slotsOff) add(rh.gs(ApsStrings.autoisf_log_slots_off))
             report.settingsChangedAt?.let { add(rh.gs(ApsStrings.autoisf_log_settings_changed, dateUtil.dateAndTimeString(it))) }
             if (stats.runs > 0 && !result.slotsOff) {

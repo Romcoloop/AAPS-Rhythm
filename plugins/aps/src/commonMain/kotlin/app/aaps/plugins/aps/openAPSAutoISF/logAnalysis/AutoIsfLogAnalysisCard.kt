@@ -1,12 +1,12 @@
 package app.aaps.plugins.aps.openAPSAutoISF.logAnalysis
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -30,6 +30,7 @@ import app.aaps.plugins.aps.compose.KeyValueRowItem
 import app.aaps.plugins.aps.openAPSAutoISF.AutoIsfSlots
 
 /** The "AutoISF log analysis" card on the AutoISF plugin screen. */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AutoIsfLogAnalysisCard(
     state: AutoIsfLogUiState,
@@ -76,10 +77,10 @@ fun AutoIsfLogAnalysisCard(
                     }
                 }
             }
-            Row(
-                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(AapsSpacing.medium),
-                verticalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.spacedBy(AapsSpacing.small)
             ) {
                 FilterChip(
                     selected = state.slot == null,
