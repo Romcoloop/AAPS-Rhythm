@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
@@ -13,14 +14,12 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import app.aaps.core.keys.interfaces.TextRef
 import app.aaps.core.ui.CoreUiStrings
 import app.aaps.core.ui.compose.AapsCard
 import app.aaps.core.ui.compose.AapsSpacing
@@ -93,7 +92,7 @@ fun AutoIsfLogAnalysisCard(
                         selected = state.slot == slot,
                         onClick = { onSlotChange(slot) },
                         enabled = !state.running,
-                        label = { Text(stringResource(slotLabel(slot))) }
+                        label = { Text(stringResource(slot.titleRef())) }
                     )
                 }
             }
@@ -198,12 +197,6 @@ private fun SuggestionItem(item: AutoIsfSuggestionUi, onApplyClick: () -> Unit) 
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
-}
-
-private fun slotLabel(slot: AutoIsfSlots.Slot): TextRef = when (slot) {
-    AutoIsfSlots.Slot.BREAKFAST -> ApsStrings.autoisf_slot_breakfast
-    AutoIsfSlots.Slot.LUNCH     -> ApsStrings.autoisf_slot_lunch
-    AutoIsfSlots.Slot.DINNER    -> ApsStrings.autoisf_slot_dinner
 }
 
 @Composable

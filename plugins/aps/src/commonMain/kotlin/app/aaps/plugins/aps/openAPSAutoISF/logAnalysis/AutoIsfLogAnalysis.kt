@@ -5,6 +5,7 @@ import app.aaps.core.interfaces.logging.LTag
 import app.aaps.core.interfaces.profile.ProfileUtil
 import app.aaps.core.interfaces.utils.DateUtil
 import app.aaps.core.interfaces.utils.DecimalFormatter
+import app.aaps.core.keys.BooleanKey
 import app.aaps.core.keys.DoubleKey
 import app.aaps.core.keys.interfaces.Preferences
 import app.aaps.core.utils.MidnightUtils
@@ -26,7 +27,12 @@ data class AutoIsfLogAnalysisResult(
     val meals: List<AutoIsfMealEpisode> = emptyList(),
     val mealStats: AutoIsfMealStats? = null,
     /** The slot has no valid meal time, so nothing could be analyzed. */
-    val noMealTime: Boolean = false
+    val noMealTime: Boolean = false,
+    /**
+     * The meal slots are switched off, so the algorithm uses the global values and a change of
+     * the slot values would do nothing. Suggestions are then not offered.
+     */
+    val slotsOff: Boolean = false
 )
 
 /** Result of [AutoIsfLogAnalysis.apply]. */
@@ -92,16 +98,18 @@ class AutoIsfLogAnalysis(
         val mealAnalyzer = AutoIsfMealAnalyzer { MidnightUtils.secondsFromMidnight(it) / 60 }
         val inPeriod = analyzer.oneRunPerBg(runs.filter { it.timestamp >= since }.sortedBy { it.timestamp })
         val meals = mealAnalyzer.episodes(inPeriod, window, AutoIsfMealAnalyzer.DEFAULT_TAIL_MINUTES)
-        val mealRuns = meals.filter { !it.hadTempTarget }.flatMap { meal -> inPeriod.filter { it.timestamp in meal.start..meal.end } }
+        val mealRuns = meals.filter { it.used }.flatMap { meal -> inPeriod.filter { it.timestamp in meal.start..meal.end } }
         // Inside the meal time the log shows the slot values, in the tail the global ones. Only the
         // meal time counts when looking for a change of the settings. A run without the slot line
         // (older build) is placed by the clock.
         val inMealTime: (AutoIsfLogRun) -> Boolean = { run ->
             run.slotName?.let { it == slot.label } ?: window.contains(MidnightUtils.secondsFromMidnight(run.timestamp) / 60)
         }
-        val report = analyzer.analyze(mealRuns, since, currentValues(slot), MIN_HOURS_SLOT, inMealTime)
-        val used = meals.filter { it.start >= report.fromTime }
-        return AutoIsfLogAnalysisResult(days, slot, files, report, used, mealAnalyzer.stats(used))
+        val slotsOff = !preferences.get(BooleanKey.ApsAutoIsfSlotsEnabled)
+        val full = analyzer.analyze(mealRuns, since, currentValues(slot), MIN_HOURS_SLOT, inMealTime)
+        val report = if (slotsOff) full.copy(suggestions = emptyList()) else full
+        val shown = if (mealRuns.isEmpty()) meals else meals.filter { it.start >= report.fromTime }
+        return AutoIsfLogAnalysisResult(days, slot, files, report, shown, mealAnalyzer.stats(shown), slotsOff = slotsOff)
     }
 
     private fun emptyReport(since: Long) = AutoIsfLogAnalyzer().analyze(emptyList(), since, emptyMap())
@@ -119,8 +127,9 @@ class AutoIsfLogAnalysis(
         return AutoIsfApplyResult.Applied
     }
 
+    /** The key to read and write: the slot copy with a slot, else the global key. */
     private fun keyFor(param: AutoIsfParam, slot: AutoIsfSlots.Slot?): DoubleKey =
-        slot?.doubles?.get(param.key) ?: param.key
+        if (slot == null) param.key else slot.doubles.getValue(param.key)
 
     private fun currentValues(slot: AutoIsfSlots.Slot?): Map<AutoIsfParam, Double> =
         AutoIsfParam.entries.associateWith { preferences.get(keyFor(it, slot)) }

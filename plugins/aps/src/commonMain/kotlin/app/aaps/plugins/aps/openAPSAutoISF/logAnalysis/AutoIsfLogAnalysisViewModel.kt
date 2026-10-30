@@ -62,9 +62,13 @@ class AutoIsfLogAnalysisViewModel(
         _uiState.update { it.copy(days = days) }
     }
 
+    /**
+     * Also drops the result on screen: its suggestions belong to the slot that was analyzed, and
+     * "Apply" writes to the slot in the state. The two must never differ.
+     */
     fun onSlotChange(slot: AutoIsfSlots.Slot?) {
         if (_uiState.value.running) return
-        _uiState.update { it.copy(slot = slot) }
+        _uiState.update { AutoIsfLogUiState(days = it.days, slot = slot) }
     }
 
     fun onAnalyze() {
@@ -90,7 +94,7 @@ class AutoIsfLogAnalysisViewModel(
         val suggested = value(item.suggestion.param, item.suggestion.suggested)
         val confirm =
             if (slot == null) rh.gs(ApsStrings.autoisf_log_apply_confirm, item.title, current, suggested)
-            else rh.gs(ApsStrings.autoisf_log_apply_confirm_slot, item.title, current, suggested, rh.gs(slotName(slot)))
+            else rh.gs(ApsStrings.autoisf_log_apply_confirm_slot, item.title, current, suggested, rh.gs(slot.titleRef()))
         _uiState.update { it.copy(pendingApply = item, confirmText = confirm) }
     }
 
@@ -122,8 +126,6 @@ class AutoIsfLogAnalysisViewModel(
         val stats = report.stats
         if (result.noMealTime)
             return AutoIsfLogUiState(days = result.days, slot = result.slot, hasResult = true, notes = listOf(rh.gs(ApsStrings.autoisf_log_no_meal_time)))
-        if (stats.runs == 0)
-            return AutoIsfLogUiState(days = result.days, slot = result.slot, hasResult = true, notes = listOf(rh.gs(ApsStrings.autoisf_log_no_runs)))
 
         val df = analysis.decimalFormatter
         val dateUtil = analysis.dateUtil
@@ -136,7 +138,7 @@ class AutoIsfLogAnalysisViewModel(
         }
         fun minutes(value: Double) = rh.gs(CoreUiStrings.format_mins, value.toInt())
 
-        val summary = listOf(
+        val summary = if (stats.runs == 0) emptyList() else listOf(
             KeyValueRow(
                 rh.gs(ApsStrings.autoisf_log_period),
                 rh.gs(ApsStrings.autoisf_log_period_value, dateUtil.dateAndTimeString(report.fromTime), dateUtil.dateAndTimeString(report.toTime))
@@ -174,24 +176,33 @@ class AutoIsfLogAnalysisViewModel(
         )
 
         val mealLines = result.meals.map { meal ->
-            rh.gs(
-                if (meal.hadTempTarget) ApsStrings.autoisf_log_meal_line_excluded else ApsStrings.autoisf_log_meal_line,
+            val line = rh.gs(
+                ApsStrings.autoisf_log_meal_line,
                 dateUtil.dateStringShort(meal.mealStart),
                 dateUtil.timeString(meal.mealStart),
                 profileUtil.fromMgdlToStringWithUnits(meal.peakBg),
                 dateUtil.timeString(meal.peakTime),
                 profileUtil.fromMgdlToStringWithUnits(meal.endBg),
-                df.to2Decimal(meal.smbUnits),
+                rh.gs(InterfacesStrings.format_insulin_units, meal.smbUnits),
                 rh.gs(if (meal.hadLow) CoreUiStrings.yes else CoreUiStrings.no)
             )
+            when {
+                meal.hadTempTarget -> rh.gs(ApsStrings.autoisf_log_meal_line_temp_target, line)
+                meal.incomplete    -> rh.gs(ApsStrings.autoisf_log_meal_line_incomplete, line)
+                else               -> line
+            }
         }
 
         val minHours = if (result.slot == null) AutoIsfLogAnalyzer.MIN_HOURS else AutoIsfLogAnalysis.MIN_HOURS_SLOT
         val notes = buildList {
+            if (stats.runs == 0) add(rh.gs(ApsStrings.autoisf_log_no_runs))
+            if (result.slotsOff) add(rh.gs(ApsStrings.autoisf_log_slots_off))
             report.settingsChangedAt?.let { add(rh.gs(ApsStrings.autoisf_log_settings_changed, dateUtil.dateAndTimeString(it))) }
-            if (!report.enoughData)
-                add(rh.gs(ApsStrings.autoisf_log_not_enough_data, rh.gs(CoreUiStrings.format_hours, stats.hours), rh.gs(CoreUiStrings.format_hours, minHours)))
-            else if (report.suggestions.isEmpty()) add(rh.gs(ApsStrings.autoisf_log_no_suggestions))
+            if (stats.runs > 0 && !result.slotsOff) {
+                if (!report.enoughData)
+                    add(rh.gs(ApsStrings.autoisf_log_not_enough_data, rh.gs(CoreUiStrings.format_hours, stats.hours), rh.gs(CoreUiStrings.format_hours, minHours)))
+                else if (report.suggestions.isEmpty()) add(rh.gs(ApsStrings.autoisf_log_no_suggestions))
+            }
         }
 
         val events = report.events.map { event ->
@@ -232,12 +243,6 @@ class AutoIsfLogAnalysisViewModel(
     private fun value(param: AutoIsfParam, value: Double): String =
         if (param.decimals <= 1) analysis.decimalFormatter.to1Decimal(value) else analysis.decimalFormatter.to2Decimal(value)
 
-    fun slotName(slot: AutoIsfSlots.Slot): TextRef = when (slot) {
-        AutoIsfSlots.Slot.BREAKFAST -> ApsStrings.autoisf_slot_breakfast
-        AutoIsfSlots.Slot.LUNCH     -> ApsStrings.autoisf_slot_lunch
-        AutoIsfSlots.Slot.DINNER    -> ApsStrings.autoisf_slot_dinner
-    }
-
     private fun driverName(driver: AutoIsfDriver): String = when (driver) {
         AutoIsfDriver.AutoIsfMax -> rh.gs(ApsStrings.autoisf_log_driver_max)
         AutoIsfDriver.Acce       -> "acce_ISF"
@@ -256,4 +261,11 @@ class AutoIsfLogAnalysisViewModel(
         AutoIsfSuggestionReason.HighsLimitedByAutoIsfMax -> ApsStrings.autoisf_log_reason_highs_max
         AutoIsfSuggestionReason.HighsWithWeakBgIsf       -> ApsStrings.autoisf_log_reason_highs_bg
     }
+}
+
+/** The name of a meal slot on the screen. */
+fun AutoIsfSlots.Slot.titleRef(): TextRef = when (this) {
+    AutoIsfSlots.Slot.BREAKFAST -> ApsStrings.autoisf_slot_breakfast
+    AutoIsfSlots.Slot.LUNCH     -> ApsStrings.autoisf_slot_lunch
+    AutoIsfSlots.Slot.DINNER    -> ApsStrings.autoisf_slot_dinner
 }

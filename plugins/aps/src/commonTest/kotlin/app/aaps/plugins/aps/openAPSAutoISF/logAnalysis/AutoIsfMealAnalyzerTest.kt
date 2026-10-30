@@ -70,11 +70,36 @@ class AutoIsfMealAnalyzerTest {
         val runs = flatDay(0, 100.0) + flatDay(1, 100.0)
         val meals = analyzer.episodes(runs, MealWindows.Window(22 * 60, 1 * 60), 60)
 
-        // day 0: 22:00 .. 01:55 of day 1; day 1: 22:00 .. end of data
-        assertEquals(2, meals.size)
-        assertEquals(48, meals[0].runs)
-        assertEquals(22 * 60 * 60_000L, meals[0].start)
-        assertEquals(dayMillis + 115 * 60_000L, meals[0].end)
+        // 00:00 .. 01:55 of day 0 is the tail of a meal that began before the data: incomplete
+        // day 0: 22:00 .. 01:55 of day 1 is complete
+        // day 1: 22:00 .. 23:55 ends with the data: incomplete
+        assertEquals(3, meals.size)
+        assertTrue(meals[0].incomplete)
+        assertEquals(24, meals[0].runs)
+        val full = meals[1]
+        assertFalse(full.incomplete)
+        assertTrue(full.used)
+        assertEquals(48, full.runs)
+        assertEquals(22 * 60 * 60_000L, full.start)
+        assertEquals(dayMillis + 115 * 60_000L, full.end)
+        assertTrue(meals[2].incomplete)
+        assertEquals(1, analyzer.stats(meals).meals)
+        assertEquals(2, analyzer.stats(meals).excluded)
+    }
+
+    @Test
+    fun `carbs still on board from before the meal time do not count as the meal`() {
+        val runs = flatDay(0, 100.0)
+        val lunchStart = 11 * 60 * 60_000L
+        // 20 g left from a snack, slowly going down, then 50 g entered at 12:30
+        for (i in 0 until 72) {
+            val t = lunchStart + i * fiveMinutes
+            val cob = if (t < lunchStart + 90 * 60_000L) 20.0 - i * 0.2 else 50.0
+            runs[(t / fiveMinutes).toInt()] = run(t, 100.0, cob = cob)
+        }
+        val meal = analyzer.episodes(runs, lunch, 180).single()
+
+        assertEquals(lunchStart + 90 * 60_000L, meal.mealStart)
     }
 
     @Test

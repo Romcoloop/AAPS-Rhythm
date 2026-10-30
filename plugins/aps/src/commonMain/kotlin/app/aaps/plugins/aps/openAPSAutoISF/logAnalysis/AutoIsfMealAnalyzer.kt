@@ -42,19 +42,28 @@ data class AutoIsfMealEpisode(
     /** The factor that drove ISF most often, over the runs with a factor above 1. */
     val dominantDriver: AutoIsfDriver,
     /** A temp target was active in at least one run. Such a meal is not used for the statistics. */
-    val hadTempTarget: Boolean
+    val hadTempTarget: Boolean,
+    /**
+     * The runs do not cover the whole meal time plus tail: the period began or the log ended in
+     * the middle of it (for example the meal is still going on). Shown, but not used for the
+     * statistics.
+     */
+    val incomplete: Boolean
 ) {
 
     val peakAboveTarget: Double get() = peakBg - targetBg
     val endAboveTarget: Double get() = endBg - targetBg
     val hadLow: Boolean get() = minutesLow > 0
+
+    /** Counts for the statistics. */
+    val used: Boolean get() = !hadTempTarget && !incomplete
 }
 
 /** Statistics over the used meals of one slot. */
 data class AutoIsfMealStats(
     /** Meals used. */
     val meals: Int,
-    /** Meals left out because a temp target was active. */
+    /** Meals left out: a temp target was active, or the meal is incomplete. */
     val excluded: Int,
     val meanPeakAboveTarget: Double,
     val medianMinutesToPeak: Int,
@@ -87,21 +96,31 @@ class AutoIsfMealAnalyzer(
      */
     fun episodes(runs: List<AutoIsfLogRun>, window: MealWindows.Window, tailMinutes: Int): List<AutoIsfMealEpisode> {
         val length = ((window.endMinute - window.startMinute).mod(MINUTES_PER_DAY)) + tailMinutes
-        // Group by meal: minutes from the start of the meal time, then the day that start falls on.
-        val groups = linkedMapOf<Long, MutableList<AutoIsfLogRun>>()
-        for (run in runs) {
+        // Walk the runs in time order. Inside one meal the minutes from the start of the meal time
+        // only grow; when they drop, the next meal (the next day) has begun. This needs no day
+        // key, so a time zone or a DST change cannot join or split meals.
+        val groups = mutableListOf<MutableList<Pair<Int, AutoIsfLogRun>>>()
+        var lastFromStart = Int.MAX_VALUE
+        for (run in runs.sortedBy { it.timestamp }) {
             val fromStart = (minuteOfDay(run.timestamp) - window.startMinute).mod(MINUTES_PER_DAY)
-            if (fromStart >= length) continue
-            val mealKey = (run.timestamp - fromStart * MINUTE_MILLIS) / (MINUTES_PER_DAY * MINUTE_MILLIS)
-            groups.getOrPut(mealKey) { mutableListOf() }.add(run)
+            if (fromStart >= length) {
+                lastFromStart = Int.MAX_VALUE
+                continue
+            }
+            if (fromStart < lastFromStart) groups.add(mutableListOf())
+            groups.last().add(fromStart to run)
+            lastFromStart = fromStart
         }
-        return groups.values.mapNotNull { episode(it) }
+        return groups.mapNotNull { episode(it, length) }
     }
 
-    private fun episode(runs: List<AutoIsfLogRun>): AutoIsfMealEpisode? {
-        if (runs.size < MIN_RUNS) return null
+    private fun episode(runsFromStart: List<Pair<Int, AutoIsfLogRun>>, length: Int): AutoIsfMealEpisode? {
+        if (runsFromStart.size < MIN_RUNS) return null
+        val runs = runsFromStart.map { it.second }
+        val incomplete = runsFromStart.first().first > COVER_TOLERANCE_MINUTES ||
+            length - runsFromStart.last().first > COVER_TOLERANCE_MINUTES + RUN_MINUTES
         val target = median(runs.mapNotNull { it.targetBg }) ?: return null
-        val mealStartRun = runs.firstOrNull { (it.cob ?: 0.0) > 0.0 }
+        val mealStartRun = carbsStart(runs)
             ?: firstRise(runs)
             ?: runs.first()
         val afterStart = runs.filter { it.timestamp >= mealStartRun.timestamp }.ifEmpty { runs }
@@ -129,8 +148,24 @@ class AutoIsfMealAnalyzer(
             maxLimitedPct = pct(runs.count { it.limitedByAutoIsfMax }, runs.size),
             smbAtMaxBolusPct = pct(runs.count { it.smbAtMaxBolus }, smbs),
             dominantDriver = dominant,
-            hadTempTarget = runs.any { it.tempTarget }
+            hadTempTarget = runs.any { it.tempTarget },
+            incomplete = incomplete
         )
+    }
+
+    /**
+     * The run where carbs were entered: the first run whose carbs on board are above zero and
+     * above the run before (more than [CARBS_STEP_G]). Carbs still on board from before the meal
+     * time do not count. Null when no carbs were entered.
+     */
+    private fun carbsStart(runs: List<AutoIsfLogRun>): AutoIsfLogRun? {
+        var previous = runs.first().cob ?: 0.0
+        for (run in runs.drop(1)) {
+            val cob = run.cob ?: 0.0
+            if (cob > 0.0 && cob - previous > CARBS_STEP_G) return run
+            previous = cob
+        }
+        return null
     }
 
     /**
@@ -149,7 +184,7 @@ class AutoIsfMealAnalyzer(
     }
 
     fun stats(episodes: List<AutoIsfMealEpisode>): AutoIsfMealStats {
-        val used = episodes.filter { !it.hadTempTarget }
+        val used = episodes.filter { it.used }
         val n = used.size
         fun mean(values: List<Double>) = if (values.isEmpty()) 0.0 else values.sum() / values.size
         val drivers = used.map { it.dominantDriver }.filter { it != AutoIsfDriver.None }
@@ -189,6 +224,12 @@ class AutoIsfMealAnalyzer(
 
         /** Fewer runs than this is not a meal (sensor gap, phone off). */
         private const val MIN_RUNS = 6
+
+        /** A meal whose first or last run is further than this from the edge of its time is incomplete. */
+        private const val COVER_TOLERANCE_MINUTES = 15
+
+        /** Carbs on board must grow by more than this to count as a new meal entry. */
+        private const val CARBS_STEP_G = 5.0
 
         private const val RUN_MINUTES = 5
         private const val RISE_MGDL = 18.0
