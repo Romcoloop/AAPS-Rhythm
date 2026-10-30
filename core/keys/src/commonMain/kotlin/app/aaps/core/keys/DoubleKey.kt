@@ -373,6 +373,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_autoISF_min_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -385,6 +386,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_autoISF_max_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -397,6 +399,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_bgAccel_ISF_weight_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -409,6 +412,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_bgBrake_ISF_weight_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -421,6 +425,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_lower_ISFrange_weight_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -433,6 +438,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_higher_ISFrange_weight_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -445,6 +451,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_pp_ISF_weight_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_3,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -457,6 +464,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_bgBlend_ISF_weight_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -469,6 +477,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_dura_ISF_weight_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -481,6 +490,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_smb_delivery_ratio_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -493,6 +503,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_smb_delivery_ratio_min_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -505,6 +516,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_smb_delivery_ratio_max_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -517,6 +529,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_smb_delivery_ratio_bg_range_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -529,6 +542,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_smb_max_range_extension_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -541,6 +555,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_autoISF_min_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -553,6 +568,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_autoISF_max_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -565,6 +581,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_bgAccel_ISF_weight_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -577,6 +594,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_bgBrake_ISF_weight_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -589,6 +607,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_lower_ISFrange_weight_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -601,6 +620,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_higher_ISFrange_weight_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -613,6 +633,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_pp_ISF_weight_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_3,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -625,6 +646,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_bgBlend_ISF_weight_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -637,6 +659,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_dura_ISF_weight_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -649,6 +672,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_smb_delivery_ratio_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -661,6 +685,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_smb_delivery_ratio_min_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -673,6 +698,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_smb_delivery_ratio_max_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -685,6 +711,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_smb_delivery_ratio_bg_range_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -697,6 +724,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_smb_max_range_extension_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -709,6 +737,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_autoISF_min_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -721,6 +750,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_autoISF_max_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -733,6 +763,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_bgAccel_ISF_weight_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -745,6 +776,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_bgBrake_ISF_weight_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -757,6 +789,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_lower_ISFrange_weight_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -769,6 +802,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_higher_ISFrange_weight_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -781,6 +815,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_pp_ISF_weight_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_3,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -793,6 +828,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_bgBlend_ISF_weight_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -805,6 +841,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_dura_ISF_weight_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -817,6 +854,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_smb_delivery_ratio_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -829,6 +867,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_smb_delivery_ratio_min_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -841,6 +880,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_smb_delivery_ratio_max_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE_2,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -853,6 +893,7 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_smb_delivery_ratio_bg_range_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -865,10 +906,10 @@ enum class DoubleKey(
         summary = KeysStrings.openapsama_smb_max_range_extension_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.DOUBLE,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
-
     ApsAutoIsfSmbMaxRangeExtension(
         key = "openapsama_smb_max_range_extension",
         defaultValue = 1.0,

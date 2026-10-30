@@ -102,11 +102,32 @@ class AutoIsfSlots(
 
     val enabled: Boolean get() = preferences.get(BooleanKey.ApsAutoIsfSlotsEnabled)
 
+    private var runStarted = false
+    private var runMinute = 0
+    private var runSlot: Slot? = null
+
     /**
-     * The slot whose meal time contains now, or null when the slots are off or now is outside
-     * all meal times. When two meal times overlap, the first one in [Slot] order wins.
+     * Fixes the clock and the slot for one loop run. Call it once at the start of the run, before
+     * any value is read. All reads until the next call then use the same slot, so a run that
+     * crosses a meal time boundary cannot mix slot and global values.
      */
-    fun activeSlot(): Slot? = select(enabled, minuteOfDay()) { preferences.get(it.windowKey) }
+    fun beginRun(): Slot? {
+        runMinute = minuteOfDay()
+        runSlot = select(enabled, runMinute) { preferences.get(it.windowKey) }
+        runStarted = true
+        return runSlot
+    }
+
+    /** Minutes since midnight as fixed by [beginRun], or the clock now when no run was started. */
+    val minuteOfRun: Int get() = if (runStarted) runMinute else minuteOfDay()
+
+    /**
+     * The slot of the current run (see [beginRun]), or null when the slots are off or the run is
+     * outside all meal times. When two meal times overlap, the first one in [Slot] order wins.
+     * Before the first run it is read from the clock.
+     */
+    fun activeSlot(): Slot? =
+        if (runStarted) runSlot else select(enabled, minuteOfDay()) { preferences.get(it.windowKey) }
 
     /** The meal time text of a slot, for the log. */
     fun windowText(slot: Slot): String = preferences.get(slot.windowKey)

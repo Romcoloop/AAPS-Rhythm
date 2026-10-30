@@ -133,7 +133,7 @@ open class OpenAPSAutoISFPlugin(
     val autoIsfVersion = "3.0.1"
     val autoIsfWeights; get() = preferences.get(BooleanKey.ApsUseAutoIsfWeights)
     /** Per meal slot values (breakfast, lunch, dinner). Falls back to the global value, see [AutoIsfSlots]. */
-    val slots = AutoIsfSlots(preferences) { MidnightUtils.secondsFromMidnight() / 60 }
+    private val slots = AutoIsfSlots(preferences) { MidnightUtils.secondsFromMidnight() / 60 }
     private val autoISF_max; get() = slots.get(DoubleKey.ApsAutoIsfMax)
     private val autoISF_min; get() = slots.get(DoubleKey.ApsAutoIsfMin)
     private val bgAccel_ISF_weight; get() = slots.get(DoubleKey.ApsAutoIsfBgAccelWeight)
@@ -233,6 +233,8 @@ open class OpenAPSAutoISFPlugin(
             targetBg = hardLimits.verifyHardLimits(tempTarget.target(), CoreUiStrings.temp_target_value, HardLimits.LIMIT_TEMP_TARGET_BG)
         }
 
+        // fix the meal slot for this run, so every value below comes from the same slot
+        slots.beginRun()
         var autosensResult = AutosensResult()
         var variableSensitivity = profile.getProfileIsfMgdl()
         val sens = profile.getIsfMgdl("OpenAPSAutoISFPlugin")
@@ -552,7 +554,7 @@ open class OpenAPSAutoISFPlugin(
         } else autosensResult.sensResult = "autosens disabled"
 
         // usual meal times: outside them the meal factors (bgBlend, pp_ISF, acce_ISF above target) are weaker
-        val meal = MealWindows.calculate(mealWindowTexts, MidnightUtils.secondsFromMidnight() / 60, outsideMealFactor)
+        val meal = MealWindows.calculate(mealWindowTexts, slots.minuteOfRun, outsideMealFactor)
         val mealScale = meal.scale
         if (meal.windowCount > 0) {
             if (meal.inWindow) consoleError.add("meal time: meal factors with full weight")

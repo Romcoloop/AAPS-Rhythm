@@ -412,7 +412,7 @@
     <string name="pref_title_autoisf_meal_window_dinner">Dinner time</string>
     <string name="pref_summary_autoisf_meal_window">Usual meal time as HH:MM-HH:MM, for example 06:30-09:00. Inside this time the meal factors (blended BG, post-prandial and acceleration above target) work with full weight. Leave empty to not use this window.</string>
     <string name="pref_title_autoisf_slots_enabled">Use meal slot settings</string>
-    <string name="pref_summary_autoisf_slots_enabled">Inside breakfast, lunch and dinner time the AutoISF and SMB delivery values of that meal slot are used instead of the global values. Outside all meal times the global values are used. The meal times are set above.</string>
+    <string name="pref_summary_autoisf_slots_enabled">Inside breakfast, lunch and dinner time the AutoISF and SMB delivery values of that meal slot are used instead of the global values. Outside all meal times the global values are used. The meal times are set above. The AutoISF log analysis still shows and changes the global values only.</string>
     <string name="pref_title_autoisf_outside_meal_factor">Meal factors outside meal times</string>
     <string name="pref_summary_autoisf_outside_meal_factor">Multiplier for the blended BG, post-prandial and acceleration (above target) weights outside all meal times. 1.0 = no change, 0.5 = half, 0.0 = off. Braking when BG falls is never reduced. Used only when at least one meal time is set.</string>
     <string name="pref_title_dura_weight">Duration ISF weight</string>

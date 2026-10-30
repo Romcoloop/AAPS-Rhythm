@@ -21,6 +21,7 @@ enum class IntKey(
     override val defaultedBySM: Boolean = false,
     override val calculatedDefaultValue: Boolean = false,
     override val dependency: BooleanPreferenceKey? = null,
+    override val hideParentScreenIfHidden: Boolean = false,
     override val engineeringModeOnly: Boolean = false,
     override val visibility: ElementVisibility = ElementVisibility.ALWAYS,
     override val enabledCondition: PreferenceEnabledCondition = PreferenceEnabledCondition.ALWAYS,
@@ -370,6 +371,7 @@ enum class IntKey(
         summary = KeysStrings.openapsama_iob_threshold_percent_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.PERCENT,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -382,6 +384,7 @@ enum class IntKey(
         summary = KeysStrings.openapsama_iob_threshold_percent_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.PERCENT,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -394,10 +397,10 @@ enum class IntKey(
         summary = KeysStrings.openapsama_iob_threshold_percent_summary,
         defaultedBySM = true,
         dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
         unitType = UnitType.PERCENT,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
-
     ApsAutoIsfIobThPercent(
         key = "iob_threshold_percent",
         defaultValue = 100,
