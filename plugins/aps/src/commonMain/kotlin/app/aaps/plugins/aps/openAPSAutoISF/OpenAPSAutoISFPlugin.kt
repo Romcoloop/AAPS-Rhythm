@@ -964,12 +964,15 @@ open class OpenAPSAutoISFPlugin(
                 summary = ApsStrings.autoisf_slots_summary,
                 items = listOf(
                     BooleanKey.ApsAutoIsfSlotsEnabled,
-                    ApsIntentKey.AutoIsfSlotsCopyGlobal.withClick { slots.copyGlobalToAllSlots() },
-                    slotScreen("auto_isf_slot_breakfast", ApsStrings.autoisf_slot_breakfast, AutoIsfSlots.Slot.BREAKFAST),
-                    slotScreen("auto_isf_slot_lunch", ApsStrings.autoisf_slot_lunch, AutoIsfSlots.Slot.LUNCH),
-                    slotScreen("auto_isf_slot_dinner", ApsStrings.autoisf_slot_dinner, AutoIsfSlots.Slot.DINNER)
+                    ApsIntentKey.AutoIsfSlotsCopyGlobal.withClick { slots.copyGlobalToAllSlots() }
                 )
             ),
+            // The slot screens sit next to "Meal slot settings", not inside it: the settings UI renders
+            // only two levels (plugin screen -> section), a third level is not drawn at all.
+            // Their keys hide the whole section while the switch is off (hideParentScreenIfHidden).
+            slotScreen("auto_isf_slot_breakfast", ApsStrings.autoisf_slot_breakfast, AutoIsfSlots.Slot.BREAKFAST),
+            slotScreen("auto_isf_slot_lunch", ApsStrings.autoisf_slot_lunch, AutoIsfSlots.Slot.LUNCH),
+            slotScreen("auto_isf_slot_dinner", ApsStrings.autoisf_slot_dinner, AutoIsfSlots.Slot.DINNER),
             PreferenceSubScreenDef(
                 key = "smb_delivery_settings",
                 title = ApsStrings.smb_delivery_settings_title,
