@@ -113,6 +113,16 @@
     <string name="autoISF_settings_title">AutoISF settings</string>
     <string name="smb_delivery_settings_title">SMB delivery settings</string>
 
+    <!--    autoISF meal slots -->
+    <string name="autoisf_slots_title">Meal slot settings</string>
+    <string name="autoisf_slots_summary">Own AutoISF and SMB delivery values for breakfast, lunch and dinner</string>
+    <string name="autoisf_slot_breakfast">Breakfast slot</string>
+    <string name="autoisf_slot_lunch">Lunch slot</string>
+    <string name="autoisf_slot_dinner">Dinner slot</string>
+    <string name="autoisf_slots_copy_global">Copy global values to all slots</string>
+    <string name="autoisf_slots_copy_global_summary">Writes the global AutoISF and SMB delivery values into the breakfast, lunch and dinner slots. Use it once to start, then change only what should differ.</string>
+    <string name="autoisf_slots_copy_global_confirm">Values already set in the three slots will be overwritten by the global values. Continue?</string>
+
     <!--    autoISF log analysis -->
     <string name="autoisf_log_analysis">AutoISF log analysis</string>
     <string name="autoisf_log_analysis_info">Reads the AAPS log and looks at what AutoISF did. The suggestions are careful, but they are only a help: you decide. Change one setting at a time and watch it for a few days.</string>

@@ -12,6 +12,7 @@ enum class ApsIntentKey(
     override val preferenceType: PreferenceType = PreferenceType.URL,
     // urlRef rather than urlResId: a resource id is an Android Int and means nothing off Android.
     override val urlRef: TextRef? = null,
+    override val confirmationMessage: TextRef? = null,
     override val exportable: Boolean = false
 ) : IntentPreferenceKey {
 
@@ -20,5 +21,14 @@ enum class ApsIntentKey(
         title = ApsStrings.openapsama_link_to_preference_json_doc_txt,
         preferenceType = PreferenceType.URL,
         urlRef = ApsStrings.openapsama_link_to_preference_json_doc
+    ),
+
+    /** Copies the global AutoISF and SMB delivery values into the three meal slots. The click handler is attached at runtime. */
+    AutoIsfSlotsCopyGlobal(
+        key = "autoisf_slots_copy_global",
+        title = ApsStrings.autoisf_slots_copy_global,
+        summary = ApsStrings.autoisf_slots_copy_global_summary,
+        preferenceType = PreferenceType.CLICK,
+        confirmationMessage = ApsStrings.autoisf_slots_copy_global_confirm
     )
 }

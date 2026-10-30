@@ -193,6 +193,14 @@ enum class BooleanKey(
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
     ApsUseAutoIsfWeights("openapsama_enable_autoISF", false, KeysStrings.pref_title_aps_use_autoisf_weights, KeysStrings.pref_summary_aps_use_autoisf_weights, defaultedBySM = true, sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)),
+    ApsAutoIsfSlotsEnabled(
+        "autoISF_slots_enabled",
+        false,
+        KeysStrings.pref_title_autoisf_slots_enabled,
+        KeysStrings.pref_summary_autoisf_slots_enabled,
+        defaultedBySM = true,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
     ApsAutoIsfSmbOnEvenTarget(
         "Enable alternative activation of SMB always",
         false,

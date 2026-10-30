@@ -359,6 +359,45 @@ enum class IntKey(
         unitType = UnitType.MGDL,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
+    // AutoISF meal slots: one copy of the global value for breakfast, lunch and dinner.
+    // Used by the AutoISF plugin instead of the global key while the slot is active.
+    ApsAutoIsfSlotBreakfastIobThPercent(
+        key = "autoISF_slot_breakfast_iob_threshold_percent",
+        defaultValue = 100,
+        min = 10,
+        max = 100,
+        title = KeysStrings.pref_title_iob_threshold_percent,
+        summary = KeysStrings.openapsama_iob_threshold_percent_summary,
+        defaultedBySM = true,
+        dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        unitType = UnitType.PERCENT,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
+    ApsAutoIsfSlotLunchIobThPercent(
+        key = "autoISF_slot_lunch_iob_threshold_percent",
+        defaultValue = 100,
+        min = 10,
+        max = 100,
+        title = KeysStrings.pref_title_iob_threshold_percent,
+        summary = KeysStrings.openapsama_iob_threshold_percent_summary,
+        defaultedBySM = true,
+        dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        unitType = UnitType.PERCENT,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
+    ApsAutoIsfSlotDinnerIobThPercent(
+        key = "autoISF_slot_dinner_iob_threshold_percent",
+        defaultValue = 100,
+        min = 10,
+        max = 100,
+        title = KeysStrings.pref_title_iob_threshold_percent,
+        summary = KeysStrings.openapsama_iob_threshold_percent_summary,
+        defaultedBySM = true,
+        dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        unitType = UnitType.PERCENT,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
+
     ApsAutoIsfIobThPercent(
         key = "iob_threshold_percent",
         defaultValue = 100,
