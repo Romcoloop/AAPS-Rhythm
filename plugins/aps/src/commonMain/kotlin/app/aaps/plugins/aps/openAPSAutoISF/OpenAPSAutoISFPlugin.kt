@@ -66,11 +66,14 @@ import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.roundToLong
+import kotlin.time.Instant
 
 @SingleIn(AppScope::class)
 @Inject
@@ -132,20 +135,16 @@ open class OpenAPSAutoISFPlugin(
     private var consoleLog = mutableListOf<String>()
     val autoIsfVersion = "3.0.1"
     val autoIsfWeights; get() = preferences.get(BooleanKey.ApsUseAutoIsfWeights)
-    /** Per meal slot values (breakfast, lunch, dinner). Falls back to the global value, see [AutoIsfSlots]. */
-    private val slots = AutoIsfSlots(preferences) { MidnightUtils.secondsFromMidnight() / 60 }
+    /** Per slot values (weekday and weekend meals, night). Falls back to the global value, see [AutoIsfSlots]. */
+    private val slots = AutoIsfSlots(preferences) { Instant.fromEpochMilliseconds(dateUtil.now()).toLocalDateTime(TimeZone.currentSystemDefault()) }
     private val autoISF_max; get() = slots.get(DoubleKey.ApsAutoIsfMax)
     private val autoISF_min; get() = slots.get(DoubleKey.ApsAutoIsfMin)
     private val bgAccel_ISF_weight; get() = slots.get(DoubleKey.ApsAutoIsfBgAccelWeight)
     private val bgBrake_ISF_weight; get() = slots.get(DoubleKey.ApsAutoIsfBgBrakeWeight)
     private val pp_ISF_weight; get() = slots.get(DoubleKey.ApsAutoIsfPpWeight)
     private val bgBlend_ISF_weight; get() = slots.get(DoubleKey.ApsAutoIsfBgBlendWeight)
-    private val mealWindowTexts
-        get() = listOf(
-            preferences.get(StringKey.ApsAutoIsfMealWindowBreakfast),
-            preferences.get(StringKey.ApsAutoIsfMealWindowLunch),
-            preferences.get(StringKey.ApsAutoIsfMealWindowDinner)
-        )
+    /** Meal times of the day: the weekday ones, or the weekend ones on a weekend day or in holiday mode. */
+    private val mealWindowTexts get() = slots.mealWindowTexts()
     private val outsideMealFactor; get() = preferences.get(DoubleKey.ApsAutoIsfOutsideMealFactor)
     private val lower_ISFrange_weight; get() = slots.get(DoubleKey.ApsAutoIsfLowBgWeight)
     private val higher_ISFrange_weight; get() = slots.get(DoubleKey.ApsAutoIsfHighBgWeight)
@@ -560,11 +559,11 @@ open class OpenAPSAutoISFPlugin(
             if (meal.inWindow) consoleError.add("meal time: meal factors with full weight")
             else consoleError.add("outside meal time: meal factors scaled by ${round(mealScale, 2)}")
         }
-        // meal slots: inside a meal time the AutoISF and SMB values of that slot are used
+        // slots: inside a meal time or the night time the AutoISF and SMB values of that slot are used
         if (slots.enabled) {
             val slot = slots.activeSlot()
-            if (slot != null) consoleError.add("AutoISF slot: ${slot.label} (${slots.windowText(slot)})")
-            else consoleError.add("AutoISF slot: none, global values")
+            if (slot != null) consoleError.add("AutoISF slot: ${slot.label} (${slots.windowText(slot)}, ${slots.dayOfRun.label})")
+            else consoleError.add("AutoISF slot: none, global values (${slots.dayOfRun.label})")
         }
         val dura05: Double = glucose_status.duraISFminutes
         val avg05: Double = glucose_status.duraISFaverage
@@ -964,15 +963,28 @@ open class OpenAPSAutoISFPlugin(
                 summary = ApsStrings.autoisf_slots_summary,
                 items = listOf(
                     BooleanKey.ApsAutoIsfSlotsEnabled,
-                    ApsIntentKey.AutoIsfSlotsCopyGlobal.withClick { slots.copyGlobalToAllSlots() }
+                    StringKey.ApsAutoIsfMealWindowNight,
+                    BooleanKey.ApsAutoIsfWeekendSlotsEnabled,
+                    StringKey.ApsAutoIsfMealWindowBreakfastWeekend,
+                    StringKey.ApsAutoIsfMealWindowLunchWeekend,
+                    StringKey.ApsAutoIsfMealWindowDinnerWeekend,
+                    BooleanKey.ApsAutoIsfHolidayMode,
+                    StringKey.ApsAutoIsfHolidayUntil,
+                    ApsIntentKey.AutoIsfSlotsCopyGlobal.withClick { slots.copyGlobalToAllSlots() },
+                    ApsIntentKey.AutoIsfSlotsCopyWeekdayToWeekend.withClick { slots.copyWeekdayToWeekend() }
                 )
             ),
             // The slot screens sit next to "Meal slot settings", not inside it: the settings UI renders
             // only two levels (plugin screen -> section), a third level is not drawn at all.
-            // Their keys hide the whole section while the switch is off (hideParentScreenIfHidden).
+            // Their keys hide the whole section while the switch is off (hideParentScreenIfHidden);
+            // the weekend ones also while "Separate weekend slots" is off.
             slotScreen("auto_isf_slot_breakfast", ApsStrings.autoisf_slot_breakfast, AutoIsfSlots.Slot.BREAKFAST),
             slotScreen("auto_isf_slot_lunch", ApsStrings.autoisf_slot_lunch, AutoIsfSlots.Slot.LUNCH),
             slotScreen("auto_isf_slot_dinner", ApsStrings.autoisf_slot_dinner, AutoIsfSlots.Slot.DINNER),
+            slotScreen("auto_isf_slot_night", ApsStrings.autoisf_slot_night, AutoIsfSlots.Slot.NIGHT),
+            slotScreen("auto_isf_slot_breakfast_weekend", ApsStrings.autoisf_slot_breakfast_weekend, AutoIsfSlots.Slot.BREAKFAST_WEEKEND),
+            slotScreen("auto_isf_slot_lunch_weekend", ApsStrings.autoisf_slot_lunch_weekend, AutoIsfSlots.Slot.LUNCH_WEEKEND),
+            slotScreen("auto_isf_slot_dinner_weekend", ApsStrings.autoisf_slot_dinner_weekend, AutoIsfSlots.Slot.DINNER_WEEKEND),
             PreferenceSubScreenDef(
                 key = "smb_delivery_settings",
                 title = ApsStrings.smb_delivery_settings_title,
@@ -989,7 +1001,7 @@ open class OpenAPSAutoISFPlugin(
         icon = pluginDescription.icon
     )
 
-    /** Settings screen of one meal slot: the slot copies of the AutoISF and SMB delivery values. */
+    /** Settings screen of one slot: the slot copies of the AutoISF and SMB delivery values. */
     private fun slotScreen(key: String, title: TextRef, slot: AutoIsfSlots.Slot): PreferenceSubScreenDef {
         val isfKeys = listOf(
             DoubleKey.ApsAutoIsfMin,

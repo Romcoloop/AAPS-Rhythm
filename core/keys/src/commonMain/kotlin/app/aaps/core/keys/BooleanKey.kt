@@ -201,6 +201,27 @@ enum class BooleanKey(
         defaultedBySM = true,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
+    /** Own slots on Saturday, Sunday and in holiday mode. Off = the weekday slots are used every day. */
+    ApsAutoIsfWeekendSlotsEnabled(
+        "autoISF_weekend_slots_enabled",
+        false,
+        KeysStrings.pref_title_autoisf_weekend_slots_enabled,
+        KeysStrings.pref_summary_autoisf_weekend_slots_enabled,
+        defaultedBySM = true,
+        dependency = ApsAutoIsfSlotsEnabled,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
+    /** A public holiday or a vacation: the weekend slots are used on a weekday too. Stays on until switched off, see [StringKey.ApsAutoIsfHolidayUntil]. */
+    ApsAutoIsfHolidayMode(
+        "autoISF_holiday_mode",
+        false,
+        KeysStrings.pref_title_autoisf_holiday_mode,
+        KeysStrings.pref_summary_autoisf_holiday_mode,
+        defaultedBySM = true,
+        dependency = ApsAutoIsfWeekendSlotsEnabled,
+        visibility = AutoIsfVisibility.WEEKEND_SLOTS,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
     ApsAutoIsfSmbOnEvenTarget(
         "Enable alternative activation of SMB always",
         false,
