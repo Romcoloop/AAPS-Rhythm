@@ -412,7 +412,19 @@
     <string name="pref_title_autoisf_meal_window_dinner">Dinner time</string>
     <string name="pref_summary_autoisf_meal_window">Usual meal time as HH:MM-HH:MM, for example 06:30-09:00. Inside this time the meal factors (blended BG, post-prandial and acceleration above target) work with full weight. Leave empty to not use this window.</string>
     <string name="pref_title_autoisf_slots_enabled">Use meal slot settings</string>
-    <string name="pref_summary_autoisf_slots_enabled">Inside breakfast, lunch and dinner time the AutoISF and SMB delivery values of that meal slot are used instead of the global values. Outside all meal times the global values are used. The meal times are set above. The AutoISF log analysis still shows and changes the global values only.</string>
+    <string name="pref_summary_autoisf_slots_enabled">Inside breakfast, lunch, dinner and night time the AutoISF and SMB delivery values of that slot are used instead of the global values. Outside all slot times the global values are used. The weekday meal times are set in the AutoISF settings, the weekend and night times below. The AutoISF log analysis still shows and changes the global values only.</string>
+    <string name="pref_title_autoisf_meal_window_night">Night time</string>
+    <string name="pref_summary_autoisf_meal_window_night">Night as HH:MM-HH:MM, for example 23:00-05:30. It may go over midnight. Inside this time the values of the night slot are used, every day of the week. A meal time wins over the night time where they overlap. Leave empty to not use the night slot.</string>
+    <string name="pref_title_autoisf_weekend_slots_enabled">Separate weekend slots</string>
+    <string name="pref_summary_autoisf_weekend_slots_enabled">On Saturday, Sunday and in holiday mode the weekend slots and the weekend meal times are used. Off = the weekday slots and meal times are used every day.</string>
+    <string name="pref_title_autoisf_meal_window_breakfast_weekend">Breakfast time (weekend)</string>
+    <string name="pref_title_autoisf_meal_window_lunch_weekend">Lunch time (weekend)</string>
+    <string name="pref_title_autoisf_meal_window_dinner_weekend">Dinner time (weekend)</string>
+    <string name="pref_summary_autoisf_meal_window_weekend">Meal time as HH:MM-HH:MM on Saturday, Sunday and in holiday mode, for example 07:00-10:00. Works like the weekday meal time: full meal factors and the values of the weekend slot inside it. Leave empty to not use this slot.</string>
+    <string name="pref_title_autoisf_holiday_mode">Holiday or vacation</string>
+    <string name="pref_summary_autoisf_holiday_mode">Use the weekend slots and weekend meal times on a weekday too, for a public holiday or a vacation. Stays on until you switch it off, or until the end date below has passed.</string>
+    <string name="pref_title_autoisf_holiday_until">Holiday or vacation ends on</string>
+    <string name="pref_summary_autoisf_holiday_until">Last day as YYYY-MM-DD, for example 2026-12-26. After this day the switch above turns itself off. Leave empty to switch it off by hand.</string>
     <string name="pref_title_autoisf_outside_meal_factor">Meal factors outside meal times</string>
     <string name="pref_summary_autoisf_outside_meal_factor">Multiplier for the blended BG, post-prandial and acceleration (above target) weights outside all meal times. 1.0 = no change, 0.5 = half, 0.0 = off. Braking when BG falls is never reduced. Used only when at least one meal time is set.</string>
     <string name="pref_title_dura_weight">Duration ISF weight</string>

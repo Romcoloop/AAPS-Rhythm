@@ -401,6 +401,62 @@ enum class IntKey(
         unitType = UnitType.PERCENT,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
+    // AutoISF meal slots, weekend and night: the same copies for Saturday/Sunday/holiday and for the night.
+    ApsAutoIsfSlotNightIobThPercent(
+        key = "autoISF_slot_night_iob_threshold_percent",
+        defaultValue = 100,
+        min = 10,
+        max = 100,
+        title = KeysStrings.pref_title_iob_threshold_percent,
+        summary = KeysStrings.openapsama_iob_threshold_percent_summary,
+        defaultedBySM = true,
+        dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        hideParentScreenIfHidden = true,
+        unitType = UnitType.PERCENT,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
+    ApsAutoIsfSlotBreakfastWeekendIobThPercent(
+        key = "autoISF_slot_breakfast_we_iob_threshold_percent",
+        defaultValue = 100,
+        min = 10,
+        max = 100,
+        title = KeysStrings.pref_title_iob_threshold_percent,
+        summary = KeysStrings.openapsama_iob_threshold_percent_summary,
+        defaultedBySM = true,
+        dependency = BooleanKey.ApsAutoIsfWeekendSlotsEnabled,
+        hideParentScreenIfHidden = true,
+        visibility = AutoIsfVisibility.WEEKEND_SLOTS,
+        unitType = UnitType.PERCENT,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
+    ApsAutoIsfSlotLunchWeekendIobThPercent(
+        key = "autoISF_slot_lunch_we_iob_threshold_percent",
+        defaultValue = 100,
+        min = 10,
+        max = 100,
+        title = KeysStrings.pref_title_iob_threshold_percent,
+        summary = KeysStrings.openapsama_iob_threshold_percent_summary,
+        defaultedBySM = true,
+        dependency = BooleanKey.ApsAutoIsfWeekendSlotsEnabled,
+        hideParentScreenIfHidden = true,
+        visibility = AutoIsfVisibility.WEEKEND_SLOTS,
+        unitType = UnitType.PERCENT,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
+    ApsAutoIsfSlotDinnerWeekendIobThPercent(
+        key = "autoISF_slot_dinner_we_iob_threshold_percent",
+        defaultValue = 100,
+        min = 10,
+        max = 100,
+        title = KeysStrings.pref_title_iob_threshold_percent,
+        summary = KeysStrings.openapsama_iob_threshold_percent_summary,
+        defaultedBySM = true,
+        dependency = BooleanKey.ApsAutoIsfWeekendSlotsEnabled,
+        hideParentScreenIfHidden = true,
+        visibility = AutoIsfVisibility.WEEKEND_SLOTS,
+        unitType = UnitType.PERCENT,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
     ApsAutoIsfIobThPercent(
         key = "iob_threshold_percent",
         defaultValue = 100,

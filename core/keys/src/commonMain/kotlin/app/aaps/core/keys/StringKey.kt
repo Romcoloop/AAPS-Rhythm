@@ -162,6 +162,63 @@ enum class StringKey(
         validator = StringValidator.regex("^\\s*([01]?[0-9]|2[0-3]):[0-5][0-9]\\s*-\\s*([01]?[0-9]|2[0-3]):[0-5][0-9]\\s*$", "Use HH:MM-HH:MM, for example 06:30-09:00"),
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
+    // AutoISF meal slots, weekend: the meal times used on Saturday, Sunday and in holiday mode.
+    ApsAutoIsfMealWindowBreakfastWeekend(
+        key = "autoISF_meal_window_breakfast_we",
+        defaultValue = "",
+        title = KeysStrings.pref_title_autoisf_meal_window_breakfast_weekend,
+        summary = KeysStrings.pref_summary_autoisf_meal_window_weekend,
+        defaultedBySM = true,
+        dependency = BooleanKey.ApsAutoIsfWeekendSlotsEnabled,
+        validator = StringValidator.regex("^\\s*([01]?[0-9]|2[0-3]):[0-5][0-9]\\s*-\\s*([01]?[0-9]|2[0-3]):[0-5][0-9]\\s*$", "Use HH:MM-HH:MM, for example 07:00-10:00"),
+        visibility = AutoIsfVisibility.WEEKEND_SLOTS,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
+    ApsAutoIsfMealWindowLunchWeekend(
+        key = "autoISF_meal_window_lunch_we",
+        defaultValue = "",
+        title = KeysStrings.pref_title_autoisf_meal_window_lunch_weekend,
+        summary = KeysStrings.pref_summary_autoisf_meal_window_weekend,
+        defaultedBySM = true,
+        dependency = BooleanKey.ApsAutoIsfWeekendSlotsEnabled,
+        validator = StringValidator.regex("^\\s*([01]?[0-9]|2[0-3]):[0-5][0-9]\\s*-\\s*([01]?[0-9]|2[0-3]):[0-5][0-9]\\s*$", "Use HH:MM-HH:MM, for example 12:00-15:00"),
+        visibility = AutoIsfVisibility.WEEKEND_SLOTS,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
+    ApsAutoIsfMealWindowDinnerWeekend(
+        key = "autoISF_meal_window_dinner_we",
+        defaultValue = "",
+        title = KeysStrings.pref_title_autoisf_meal_window_dinner_weekend,
+        summary = KeysStrings.pref_summary_autoisf_meal_window_weekend,
+        defaultedBySM = true,
+        dependency = BooleanKey.ApsAutoIsfWeekendSlotsEnabled,
+        validator = StringValidator.regex("^\\s*([01]?[0-9]|2[0-3]):[0-5][0-9]\\s*-\\s*([01]?[0-9]|2[0-3]):[0-5][0-9]\\s*$", "Use HH:MM-HH:MM, for example 18:00-21:00"),
+        visibility = AutoIsfVisibility.WEEKEND_SLOTS,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
+    // AutoISF night slot: one window for every day, it may go over midnight.
+    ApsAutoIsfMealWindowNight(
+        key = "autoISF_meal_window_night",
+        defaultValue = "",
+        title = KeysStrings.pref_title_autoisf_meal_window_night,
+        summary = KeysStrings.pref_summary_autoisf_meal_window_night,
+        defaultedBySM = true,
+        dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
+        validator = StringValidator.regex("^\\s*([01]?[0-9]|2[0-3]):[0-5][0-9]\\s*-\\s*([01]?[0-9]|2[0-3]):[0-5][0-9]\\s*$", "Use HH:MM-HH:MM, for example 23:00-05:30"),
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
+    /** Last day of holiday mode as YYYY-MM-DD. After that day [BooleanKey.ApsAutoIsfHolidayMode] switches itself off. Empty = switch it off by hand. */
+    ApsAutoIsfHolidayUntil(
+        key = "autoISF_holiday_until",
+        defaultValue = "",
+        title = KeysStrings.pref_title_autoisf_holiday_until,
+        summary = KeysStrings.pref_summary_autoisf_holiday_until,
+        defaultedBySM = true,
+        dependency = BooleanKey.ApsAutoIsfHolidayMode,
+        validator = StringValidator.regex("^\\s*\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])\\s*$", "Use YYYY-MM-DD, for example 2026-12-26, or leave it empty"),
+        visibility = AutoIsfVisibility.WEEKEND_SLOTS,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
     SafetyAge(key = "age", defaultValue = "adult", title = KeysStrings.pref_title_patient_age, preferenceType = PreferenceType.LIST, sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)),
     MaintenanceEmail(
         key = "maintenance_logs_email",
