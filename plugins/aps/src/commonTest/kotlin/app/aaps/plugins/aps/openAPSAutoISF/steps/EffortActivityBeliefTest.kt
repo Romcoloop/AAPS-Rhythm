@@ -8,6 +8,9 @@ class EffortActivityBeliefTest {
 
     private val minute = 60_000L
 
+    /** Not 0: a memory stamped at 0 reads as "no memory" (lastEffortMs 0 is the empty mark). */
+    private val t0 = 1_700_000_000_000L
+
     private fun w(s5: Int, s15: Int, s60: Int = 0) = StepWindows(s5, 0, s15, 0, s60, 0, timestamp = 0L)
 
     @Test
@@ -36,13 +39,13 @@ class EffortActivityBeliefTest {
     @Test
     fun `a short burst reduces now but does not arm the memory`() {
         // 5 minute window says moving, 15 minute window does not
-        val (a, m) = EffortActivityBelief.assess(w(s5 = 200, s15 = 250), 0L, EffortActivityBelief.Memory())
+        val (a, m) = EffortActivityBelief.assess(w(s5 = 200, s15 = 250), t0, EffortActivityBelief.Memory())
         assertEquals(EffortActivityBelief.State.ACTIVE, a.state)
         assertTrue(a.smbFactor < 1.0)
         assertTrue(a.reasons.contains("burst_unconfirmed"))
         assertEquals(0L, m.lastEffortMs)
         // one run later, still: no protection left
-        val (b, _) = EffortActivityBelief.assess(w(0, 0), 5 * minute, m)
+        val (b, _) = EffortActivityBelief.assess(w(0, 0), t0 + 5 * minute, m)
         assertEquals(EffortActivityBelief.State.IDLE, b.state)
         assertEquals(1.0, b.smbFactor)
     }
@@ -50,7 +53,7 @@ class EffortActivityBeliefTest {
     @Test
     fun `a confirmed walk keeps a fading protection after it ends`() {
         var memory = EffortActivityBelief.Memory()
-        var now = 0L
+        var now = t0
         // 30 minutes of walking at 40 steps/min, one run every 5 minutes
         repeat(7) {
             val (a, m) = EffortActivityBelief.assess(w(s5 = 200, s15 = 600, s60 = 1200), now, memory)
@@ -75,19 +78,21 @@ class EffortActivityBeliefTest {
 
     @Test
     fun `a short confirmed walk earns a short protection`() {
-        val (_, m) = EffortActivityBelief.assess(w(s5 = 200, s15 = 400), 0L, EffortActivityBelief.Memory())
+        val (_, m) = EffortActivityBelief.assess(w(s5 = 200, s15 = 400), t0, EffortActivityBelief.Memory())
         assertEquals(EffortActivityBelief.EFFORT_SEED_MIN, m.effortMinutes)
         val horizon = EffortActivityBelief.memoryHorizonMin(m.effortMinutes)
         assertEquals(45.0, horizon)
-        val (gone, _) = EffortActivityBelief.assess(w(0, 0), 46 * minute, m)
+        val (still, _) = EffortActivityBelief.assess(w(0, 0), t0 + 44 * minute, m)
+        assertEquals(EffortActivityBelief.State.RECENT_EFFORT, still.state)
+        val (gone, _) = EffortActivityBelief.assess(w(0, 0), t0 + 46 * minute, m)
         assertEquals(EffortActivityBelief.State.IDLE, gone.state)
     }
 
     @Test
     fun `the factor never goes above 1 or below the floor`() {
-        val (huge, m) = EffortActivityBelief.assess(w(s5 = 5000, s15 = 15000, s60 = 60000), 0L, EffortActivityBelief.Memory())
+        val (huge, m) = EffortActivityBelief.assess(w(s5 = 5000, s15 = 15000, s60 = 60000), t0, EffortActivityBelief.Memory())
         assertEquals(EffortActivityBelief.SMB_FLOOR, huge.smbFactor, 1e-9)
-        val (later, _) = EffortActivityBelief.assess(w(0, 0), 10 * minute, m)
+        val (later, _) = EffortActivityBelief.assess(w(0, 0), t0 + 10 * minute, m)
         assertTrue(later.smbFactor in EffortActivityBelief.SMB_FLOOR..1.0)
     }
 }
