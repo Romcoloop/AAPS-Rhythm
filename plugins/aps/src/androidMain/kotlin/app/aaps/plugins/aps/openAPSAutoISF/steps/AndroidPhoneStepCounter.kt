@@ -16,6 +16,7 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
+import dev.zacsweers.metro.binding
 
 /**
  * The phone's `TYPE_STEP_COUNTER` sensor behind [PhoneStepCounter].
@@ -28,7 +29,7 @@ import dev.zacsweers.metro.SingleIn
  * Android needs the `ACTIVITY_RECOGNITION` permission for this sensor. Without it the sensor stays
  * quiet and [windows] answers null, so no rule fires.
  */
-@ContributesBinding(AppScope::class)
+@ContributesBinding(AppScope::class, binding = binding<PhoneStepCounter>())
 @SingleIn(AppScope::class)
 @Inject
 class AndroidPhoneStepCounter(
