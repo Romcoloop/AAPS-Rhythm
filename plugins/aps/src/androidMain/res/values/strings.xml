@@ -116,13 +116,20 @@
 
     <!--    autoISF meal slots -->
     <string name="autoisf_slots_title">Meal slot settings</string>
-    <string name="autoisf_slots_summary">Own AutoISF and SMB delivery values for breakfast, lunch and dinner</string>
+    <string name="autoisf_slots_summary">Own AutoISF and SMB delivery values for breakfast, lunch, dinner and night, on weekdays and on the weekend</string>
     <string name="autoisf_slot_breakfast">Breakfast slot</string>
     <string name="autoisf_slot_lunch">Lunch slot</string>
     <string name="autoisf_slot_dinner">Dinner slot</string>
+    <string name="autoisf_slot_night">Night slot</string>
+    <string name="autoisf_slot_breakfast_weekend">Breakfast slot (weekend)</string>
+    <string name="autoisf_slot_lunch_weekend">Lunch slot (weekend)</string>
+    <string name="autoisf_slot_dinner_weekend">Dinner slot (weekend)</string>
     <string name="autoisf_slots_copy_global">Copy global values to all slots</string>
-    <string name="autoisf_slots_copy_global_summary">Writes the global AutoISF and SMB delivery values into the breakfast, lunch and dinner slots. Use it once to start, then change only what should differ.</string>
-    <string name="autoisf_slots_copy_global_confirm">Values already set in the three slots will be overwritten by the global values. Continue?</string>
+    <string name="autoisf_slots_copy_global_summary">Writes the global AutoISF and SMB delivery values into every slot: weekday meals, weekend meals and night. Use it once to start, then change only what should differ. The slot times are not changed.</string>
+    <string name="autoisf_slots_copy_global_confirm">Values already set in all slots will be overwritten by the global values. Continue?</string>
+    <string name="autoisf_slots_copy_weekday_to_weekend">Copy weekday slots to weekend</string>
+    <string name="autoisf_slots_copy_weekday_to_weekend_summary">Writes the values of the weekday breakfast, lunch and dinner slots into the weekend slots. A good start before the weekend slots are tuned. The weekend meal times are not changed.</string>
+    <string name="autoisf_slots_copy_weekday_to_weekend_confirm">Values already set in the three weekend slots will be overwritten by the weekday slot values. Continue?</string>
 
     <!--    autoISF log analysis -->
     <string name="autoisf_log_analysis">AutoISF log analysis</string>
