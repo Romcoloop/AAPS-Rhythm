@@ -126,11 +126,22 @@ jobs:
           S_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           S_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
+          set -o pipefail
           ./gradlew $GRADLE_ARGS ":app:assemble${BUILD_VARIANT}" ":wear:assemble${BUILD_VARIANT}" \
             -Pandroid.injected.signing.store.file="$RUNNER_TEMP/keystore/keystore.jks" \
             -Pandroid.injected.signing.store.password="$S_KEYSTORE_PASSWORD" \
             -Pandroid.injected.signing.key.alias="$S_KEY_ALIAS" \
-            -Pandroid.injected.signing.key.password="$S_KEY_PASSWORD"
+            -Pandroid.injected.signing.key.password="$S_KEY_PASSWORD" 2>&1 | tee build.log
+
+      - name: Build errors as annotations
+        if: ${{ failure() }}
+        run: |
+          [ -f build.log ] || exit 0
+          {
+            grep -E '^e: ' build.log | sed -E 's#^e: file://([^:]+):([0-9]+):([0-9]+) (.*)#::error file=\1,line=\2::\4#'
+            grep -E '^e: |error:|Error:|\[ksp\]|\[Metro\]' build.log | grep -v '^e: file' | sed 's/^/::error ::/'
+            grep -A8 'What went wrong' build.log | grep -v '^> Task' | sed 's/^/::error ::/'
+          } | head -10 || true
 
       - name: Name the APK
         run: |
