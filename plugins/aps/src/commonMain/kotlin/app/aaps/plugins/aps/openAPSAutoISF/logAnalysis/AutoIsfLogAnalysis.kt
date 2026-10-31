@@ -98,6 +98,7 @@ class AutoIsfLogAnalysis(
         val mealAnalyzer = AutoIsfMealAnalyzer { MidnightUtils.secondsFromMidnight(it) / 60 }
         val inPeriod = analyzer.oneRunPerBg(runs.filter { it.timestamp >= since }.sortedBy { it.timestamp })
         val meals = mealAnalyzer.episodes(inPeriod, window, AutoIsfMealAnalyzer.DEFAULT_TAIL_MINUTES)
+            .filter { meal -> belongsToSlot(slot, inPeriod.filter { it.timestamp in meal.start..meal.end }) }
         val mealRuns = meals.filter { it.used }.flatMap { meal -> inPeriod.filter { it.timestamp in meal.start..meal.end } }
         // Inside the meal time the log shows the slot values, in the tail the global ones. Only the
         // meal time counts when looking for a change of the settings. A run without the slot line
@@ -105,7 +106,9 @@ class AutoIsfLogAnalysis(
         val inMealTime: (AutoIsfLogRun) -> Boolean = { run ->
             run.slotName?.let { it == slot.label } ?: window.contains(MidnightUtils.secondsFromMidnight(run.timestamp) / 60)
         }
-        val slotsOff = !preferences.get(BooleanKey.ApsAutoIsfSlotsEnabled)
+        // A weekend slot is also dead while "Separate weekend slots" is off: the weekday slots run then.
+        val slotsOff = !preferences.get(BooleanKey.ApsAutoIsfSlotsEnabled) ||
+            (slot.dayType == AutoIsfSlots.DayType.WEEKEND && !preferences.get(BooleanKey.ApsAutoIsfWeekendSlotsEnabled))
         val full = analyzer.analyze(mealRuns, since, currentValues(slot), MIN_HOURS_SLOT, inMealTime)
         val report = if (slotsOff) full.copy(suggestions = emptyList()) else full
         val shown = if (mealRuns.isEmpty()) meals else meals.filter { it.start >= report.fromTime }
@@ -137,10 +140,31 @@ class AutoIsfLogAnalysis(
     companion object {
 
         private const val DAY_MILLIS = 24 * 60 * 60 * 1000L
-        val DAY_CHOICES = listOf(1, 3, 7)
+        private val DAY_CHOICES = listOf(1, 3, 7)
+
+        /** A weekend slot sees two meals a week, so its periods are longer. */
+        private val DAY_CHOICES_WEEKEND = listOf(14, 28)
         const val DEFAULT_DAYS = 3
 
         /** For one slot: about two meals with their tails. */
         const val MIN_HOURS_SLOT = 6.0
+
+        /** The periods offered for a slot (or the whole day with null). */
+        fun dayChoices(slot: AutoIsfSlots.Slot?): List<Int> =
+            if (slot?.dayType == AutoIsfSlots.DayType.WEEKEND) DAY_CHOICES_WEEKEND else DAY_CHOICES
+
+        /**
+         * True when a meal (the runs of one window plus tail) was run with [slot].
+         *
+         * The runs say which slot they used (the "AutoISF slot" line). A weekday breakfast window
+         * on a Saturday is not a weekday breakfast: its runs name the weekend slot, or "none".
+         * Runs from an older build have no slot line; they are kept for a weekday slot only,
+         * because the weekend and night slots did not exist then.
+         */
+        fun belongsToSlot(slot: AutoIsfSlots.Slot, runs: List<AutoIsfLogRun>): Boolean {
+            val named = runs.mapNotNull { it.slotName }
+            if (named.isEmpty()) return slot.dayType == AutoIsfSlots.DayType.WEEKDAY
+            return named.any { it == slot.label }
+        }
     }
 }

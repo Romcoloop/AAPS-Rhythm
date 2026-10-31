@@ -68,7 +68,12 @@ class AutoIsfLogAnalysisViewModel(
      */
     fun onSlotChange(slot: AutoIsfSlots.Slot?) {
         if (_uiState.value.running) return
-        _uiState.update { AutoIsfLogUiState(days = it.days, slot = slot) }
+        _uiState.update { state ->
+            // A weekend slot offers other periods than the rest: keep the days valid for the new slot.
+            val choices = AutoIsfLogAnalysis.dayChoices(slot)
+            val days = if (state.days in choices) state.days else choices.firstOrNull { it >= state.days } ?: choices.last()
+            AutoIsfLogUiState(days = days, slot = slot)
+        }
     }
 
     fun onAnalyze() {
@@ -268,7 +273,11 @@ class AutoIsfLogAnalysisViewModel(
 
 /** The name of a meal slot on the screen. */
 fun AutoIsfSlots.Slot.titleRef(): TextRef = when (this) {
-    AutoIsfSlots.Slot.BREAKFAST -> ApsStrings.autoisf_slot_breakfast
-    AutoIsfSlots.Slot.LUNCH     -> ApsStrings.autoisf_slot_lunch
-    AutoIsfSlots.Slot.DINNER    -> ApsStrings.autoisf_slot_dinner
+    AutoIsfSlots.Slot.BREAKFAST         -> ApsStrings.autoisf_slot_breakfast
+    AutoIsfSlots.Slot.LUNCH             -> ApsStrings.autoisf_slot_lunch
+    AutoIsfSlots.Slot.DINNER            -> ApsStrings.autoisf_slot_dinner
+    AutoIsfSlots.Slot.BREAKFAST_WEEKEND -> ApsStrings.autoisf_slot_breakfast_weekend
+    AutoIsfSlots.Slot.LUNCH_WEEKEND     -> ApsStrings.autoisf_slot_lunch_weekend
+    AutoIsfSlots.Slot.DINNER_WEEKEND    -> ApsStrings.autoisf_slot_dinner_weekend
+    AutoIsfSlots.Slot.NIGHT             -> ApsStrings.autoisf_slot_night
 }

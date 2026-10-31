@@ -63,7 +63,7 @@ fun AutoIsfLogAnalysisCard(
                 horizontalArrangement = Arrangement.spacedBy(AapsSpacing.medium),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                AutoIsfLogAnalysis.DAY_CHOICES.forEach { days ->
+                AutoIsfLogAnalysis.dayChoices(state.slot).forEach { days ->
                     FilterChip(
                         selected = state.days == days,
                         onClick = { onDaysChange(days) },

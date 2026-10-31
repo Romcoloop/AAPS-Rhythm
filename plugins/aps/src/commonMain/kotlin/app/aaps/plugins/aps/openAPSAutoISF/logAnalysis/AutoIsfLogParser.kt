@@ -39,8 +39,9 @@ data class AutoIsfLogRun(
     /** A temporary target was active (from the profile line before this run). */
     val tempTarget: Boolean = false,
     /**
-     * Meal slot the run used, from the "AutoISF slot: ..." line: "Breakfast", "Lunch", "Dinner",
-     * "none" (slots on, outside all meal times) or null (line not present, older build or slots off).
+     * Slot the run used, from the "AutoISF slot: ..." line: a slot label such as "Breakfast",
+     * "Breakfast-weekend" or "Night" (see `AutoIsfSlots.Slot.label`), "none" (slots on, outside all
+     * windows) or null (line not present, older build or slots off).
      */
     val slotName: String? = null
 ) {
@@ -176,7 +177,7 @@ class AutoIsfLogParser {
         private val DURA_ISF = Regex("dura_ISF adaptation is $NUM")
         private val MAX_BOLUS = Regex("maxBolus: $NUM")
         private val COB = Regex(", COB=$NUM, IOB=")
-        private val SLOT = Regex("AutoISF slot: ([A-Za-z]+)")
+        private val SLOT = Regex("AutoISF slot: ([A-Za-z-]+)")
         private const val TEMP_TARGET_SET = "temptargetSet=true"
         private val EVEN_TARGET = Regex("SMB enabled; current target \\S+ (has|is) even")
         private val MIN_GUARD_STOP = Regex("minGuardBG \\S+ projected below \\S+ - disabling SMB")

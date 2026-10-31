@@ -69,13 +69,24 @@ class AutoIsfLogParserTest {
             "21:05:00.100 [w] D/APS: [OpenAPSAutoISFPlugin.invoke():479]: Result: RT(algorithm=AUTO_ISF, runningDynamicIsf=true, timestamp=1793131500000, temp=absolute, bg=120.0, " +
                 "reason=COB: 0, predBGs=Predictions(IOB=[120], COB=null), COB=0.0, IOB=0.2, consoleError=[AutoISF slot: none, global values, final ISF factor is 1.0 ])"
         )
-        assertEquals(4, parser.runs.size)
+        // slots v2: the label has a hyphen and the line names the kind of day
+        parser.accept(
+            "08:05:00.100 [w] D/APS: [OpenAPSAutoISFPlugin.invoke():479]: Result: RT(algorithm=AUTO_ISF, runningDynamicIsf=true, timestamp=1793174700000, temp=absolute, bg=140.0, " +
+                "reason=COB: 30, predBGs=Predictions(IOB=[140], COB=null), COB=30.0, IOB=1.0, consoleError=[AutoISF slot: Breakfast-weekend (07:00-10:00, holiday), final ISF factor is 1.1 ])"
+        )
+        parser.accept(
+            "02:05:00.100 [w] D/APS: [OpenAPSAutoISFPlugin.invoke():479]: Result: RT(algorithm=AUTO_ISF, runningDynamicIsf=true, timestamp=1793239500000, temp=absolute, bg=110.0, " +
+                "reason=COB: 0, predBGs=Predictions(IOB=[110], COB=null), COB=0.0, IOB=0.1, consoleError=[AutoISF slot: Night (23:00-05:30, weekday), final ISF factor is 1.0 ])"
+        )
+        assertEquals(6, parser.runs.size)
         val dinner = parser.runs[2]
         assertEquals(40.0, dinner.cob)
         assertTrue(dinner.tempTarget)
         assertEquals("Dinner", dinner.slotName)
         assertEquals(1.5, assertNotNull(dinner.settings).getValue("autoISF_max"), 1e-6)
         assertEquals("none", parser.runs[3].slotName)
+        assertEquals("Breakfast-weekend", parser.runs[4].slotName)
+        assertEquals("Night", parser.runs[5].slotName)
     }
 
     @Test

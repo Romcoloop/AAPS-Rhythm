@@ -180,7 +180,7 @@
     <string name="autoisf_log_saved">Saved. Run the analysis again after a few days.</string>
     <string name="autoisf_slot_all">All</string>
     <string name="autoisf_log_apply_confirm_slot" comment="%1$s=name of the setting, %2$s=current value, %3$s=new value, %4$s=name of the meal slot. Example: Change autoISF max from 1.60 to 1.70 in Lunch slot?">Change %1$s from %2$s to %3$s in %4$s? The loop will use the new value at the next run inside this meal time.</string>
-    <string name="autoisf_log_no_meal_time">This meal slot has no meal time. Set it in the AutoISF settings (for example 11:00-14:00).</string>
+    <string name="autoisf_log_no_meal_time">This slot has no time set. Set it in the AutoISF settings (weekday meals) or in the Meal slot settings (weekend meals and night), for example 11:00-14:00.</string>
     <string name="autoisf_log_meals_section">Meals (meal time + 3 h)</string>
     <string name="autoisf_log_meals">Meals used</string>
     <string name="autoisf_log_meals_value" comment="%1$d=meals used, %2$d=meals left out (temp target or incomplete). Example: 5 (1 left out)">%1$d (%2$d left out)</string>
@@ -199,7 +199,7 @@
     <string name="autoisf_log_meal_line_temp_target" comment="%1$s=the meal line (autoisf_log_meal_line). The meal is not used because a temp target was active.">%1$s (temp target, not used)</string>
     <string name="autoisf_log_meal_line_incomplete" comment="%1$s=the meal line (autoisf_log_meal_line). The meal is not used because the log does not cover all of it, for example it is still going on.">%1$s (incomplete, not used)</string>
     <string name="autoisf_log_meals_all_left_out">All meals in this period are incomplete or had a temp target, so there is nothing to rate yet. Try a longer period, or come back when the meal is over.</string>
-    <string name="autoisf_log_slots_off">Meal slot settings are off, so the loop uses the global values. Switch them on in the AutoISF settings to get suggestions for this slot.</string>
+    <string name="autoisf_log_slots_off">This slot is off (meal slot settings or separate weekend slots), so the loop does not use its values. Switch them on in the AutoISF settings to get suggestions for this slot.</string>
     <string name="autoisf_log_changed_meanwhile">This setting was changed after the analysis. Nothing was saved. Run the analysis again.</string>
 
 </resources>
