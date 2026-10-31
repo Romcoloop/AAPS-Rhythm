@@ -425,6 +425,14 @@
     <string name="pref_summary_autoisf_holiday_mode">Use the weekend slots and weekend meal times on a weekday too, for a public holiday or a vacation. Stays on until you switch it off, or until the end date below has passed.</string>
     <string name="pref_title_autoisf_holiday_until">Holiday or vacation ends on</string>
     <string name="pref_summary_autoisf_holiday_until">Last day as YYYY-MM-DD, for example 2026-12-26. After this day the switch above turns itself off. Leave empty to switch it off by hand.</string>
+    <string name="pref_title_autoisf_steps_phone_source">Count steps with the phone</string>
+    <string name="pref_summary_autoisf_steps_phone_source">Reads the step sensor of the phone and stores the steps like a watch would, so the step rules below and the automation trigger "Steps count" work without a watch. Needs the Physical activity permission. Steps from a connected watch are used as well.</string>
+    <string name="pref_title_autoisf_steps_sport_guard">Sport guard</string>
+    <string name="pref_summary_autoisf_steps_sport_guard">No SMB, and no temp basal above the profile basal, during a burst of steps (400 in 5 min and 800 in 10 min) or sustained activity (1200 in 30 min, 3000 in 60 min or 4500 in 180 min). Released as soon as there are no steps for 5 minutes. From OpenAPS AIMI.</string>
+    <string name="pref_title_autoisf_steps_smb_interval">Longer SMB interval after activity</string>
+    <string name="pref_summary_autoisf_steps_smb_interval">At least 10 minutes between SMBs after more than 1500 steps in 3 hours while glucose is under 120 mg/dl (6.7 mmol/l), and at least 15 minutes while still moving. From OpenAPS AIMI.</string>
+    <string name="pref_title_autoisf_steps_effort_protection">Effort protection</string>
+    <string name="pref_summary_autoisf_steps_effort_protection">Smaller SMBs while walking (from 25 steps per minute) and for 30 to 120 minutes after, depending on how hard and how long. The SMB is reduced to at most 45 percent of its size. Never makes an SMB larger. From OpenAPS AIMI.</string>
     <string name="pref_title_autoisf_outside_meal_factor">Meal factors outside meal times</string>
     <string name="pref_summary_autoisf_outside_meal_factor">Multiplier for the blended BG, post-prandial and acceleration (above target) weights outside all meal times. 1.0 = no change, 0.5 = half, 0.0 = off. Braking when BG falls is never reduced. Used only when at least one meal time is set.</string>
     <string name="pref_title_dura_weight">Duration ISF weight</string>

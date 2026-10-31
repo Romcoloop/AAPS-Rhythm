@@ -23,6 +23,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
 import kotlin.math.roundToInt
+import app.aaps.plugins.aps.openAPSAutoISF.steps.StepsActivity
 import kotlin.math.roundToLong
 
 @SingleIn(AppScope::class)
@@ -210,7 +211,9 @@ class DetermineBasalAutoISF(
     fun determine_basal(
         glucose_status: GlucoseStatus, currenttemp: CurrentTemp, iob_data_array: Array<IobTotal>, profile: OapsProfileAutoIsf, autosens_data: AutosensResult, meal_data: MealData,
         microBolusAllowed: Boolean, currentTime: Long, flatBGsDetected: Boolean, autoIsfMode: Boolean, loop_wanted_smb: String, profile_percentage: Int, smb_ratio: Double,
-        smb_max_range_extension: Double, iob_threshold_percent: Int, auto_isf_consoleError: MutableList<String>, auto_isf_consoleLog: MutableList<String>
+        smb_max_range_extension: Double, iob_threshold_percent: Int, auto_isf_consoleError: MutableList<String>, auto_isf_consoleLog: MutableList<String>,
+        /** The step rules of this run (sport guard, SMB spacing, effort protection). NONE = the same as upstream. */
+        steps_activity: StepsActivity = StepsActivity.NONE
     ): RT {
         consoleError = mutableListOf()
         consoleLog = mutableListOf()
@@ -1143,6 +1146,16 @@ class DetermineBasalAutoISF(
                     }
                     microBolus = kotlin.math.floor(microBolus * roundSMBTo) / roundSMBTo
                 }
+                // Step rules: both only make the SMB smaller, never larger.
+                if (steps_activity.effortSmbFactor < 1.0 && microBolus > 0) {
+                    val beforeEffort = microBolus
+                    microBolus = kotlin.math.floor(microBolus * steps_activity.effortSmbFactor * roundSMBTo) / roundSMBTo
+                    rT.reason.append("effort x${round(steps_activity.effortSmbFactor, 2)}: SMB ${round(beforeEffort, 2)} -> ${round(microBolus, 2)}U; ")
+                }
+                if (steps_activity.sportGuard && microBolus > 0) {
+                    microBolus = 0.0
+                    rT.reason.append("sport guard: no SMB; ")
+                }
 
                 // calculate a long enough zero temp to eventually correct back up to target
                 val smbTarget = target_bg
@@ -1188,8 +1201,8 @@ class DetermineBasalAutoISF(
                 // seconds since last bolus
                 val lastBolusAge = (systemTime - iob_data.lastBolusTime) / 1000.0
                 //console.error(lastBolusAge);
-                // allow SMBIntervals between 1 and 10 minutes
-                val smbIntervalMinutes = min(10, max(1, profile.SMBInterval))
+                // allow SMBIntervals between 1 and 10 minutes; the step rules may ask for more (10 or 15)
+                val smbIntervalMinutes = max(min(10, max(1, profile.SMBInterval)), steps_activity.smbIntervalFloorMinutes)
                 val SMBInterval = smbIntervalMinutes * 60.0   // in seconds
                 //console.error(naive_eventualBG, insulinReq, worstCaseInsulinReq, durationReq);
                 consoleError.add("naive_eventualBG $naive_eventualBG,${durationReq}m ${smbLowTempReq}U/h temp needed; last bolus ${round(lastBolusAge / 60.0, 1)}m ago; maxBolus: $maxBolus")
@@ -1217,6 +1230,12 @@ class DetermineBasalAutoISF(
             }
 
             val maxSafeBasal = getMaxSafeBasal(profile)
+
+            // Sport guard: no high temp either. Insulin that the SMB did not give must not come as basal.
+            if (steps_activity.sportGuard && rate > basal) {
+                rT.reason.append("sport guard: rate ${round(rate, 2)} capped at basal ${round(basal, 2)}U/hr, ")
+                rate = round_basal(basal)
+            }
 
             if (rate > maxSafeBasal) {
                 rT.reason.append("adj. req. rate: ${round(rate, 2)} to maxSafeBasal: ${maxSafeBasal.withoutZeros()}, ")

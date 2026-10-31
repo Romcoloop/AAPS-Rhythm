@@ -222,6 +222,42 @@ enum class BooleanKey(
         visibility = AutoIsfVisibility.WEEKEND_SLOTS,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
+    /** Count steps with the phone's own step sensor and store them like a watch would. Needs the activity permission. */
+    ApsAutoIsfStepsPhoneSource(
+        "autoISF_steps_phone_source",
+        false,
+        KeysStrings.pref_title_autoisf_steps_phone_source,
+        KeysStrings.pref_summary_autoisf_steps_phone_source,
+        defaultedBySM = true,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
+    /** A burst of steps or sustained activity stops SMBs and keeps the temp basal at or under the profile basal. */
+    ApsAutoIsfStepsSportGuard(
+        "autoISF_steps_sport_guard",
+        false,
+        KeysStrings.pref_title_autoisf_steps_sport_guard,
+        KeysStrings.pref_summary_autoisf_steps_sport_guard,
+        defaultedBySM = true,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
+    /** After activity the SMBs are spaced to at least 10 minutes, while still moving to 15. */
+    ApsAutoIsfStepsSmbInterval(
+        "autoISF_steps_smb_interval",
+        false,
+        KeysStrings.pref_title_autoisf_steps_smb_interval,
+        KeysStrings.pref_summary_autoisf_steps_smb_interval,
+        defaultedBySM = true,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
+    /** Smaller SMBs while walking and for a while after, scaled by how hard and how long. */
+    ApsAutoIsfStepsEffortProtection(
+        "autoISF_steps_effort_protection",
+        false,
+        KeysStrings.pref_title_autoisf_steps_effort_protection,
+        KeysStrings.pref_summary_autoisf_steps_effort_protection,
+        defaultedBySM = true,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
     ApsAutoIsfSmbOnEvenTarget(
         "Enable alternative activation of SMB always",
         false,

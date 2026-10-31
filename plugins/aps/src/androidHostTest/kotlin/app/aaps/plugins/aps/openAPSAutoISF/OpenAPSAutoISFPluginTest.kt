@@ -14,6 +14,7 @@ import app.aaps.core.keys.IntKey
 import app.aaps.core.keys.StringKey
 import app.aaps.core.keys.UnitDoubleKey
 import app.aaps.plugins.aps.openAPSAutoISF.logAnalysis.AutoIsfLogAnalysis
+import app.aaps.plugins.aps.openAPSAutoISF.steps.PhoneStepCounter
 import app.aaps.shared.tests.TestBaseWithProfile
 import com.google.common.truth.Truth.assertThat
 import org.junit.jupiter.api.BeforeEach
@@ -29,6 +30,7 @@ class OpenAPSAutoISFPluginTest : TestBaseWithProfile() {
     @Mock lateinit var determineBasalSMB: DetermineBasalAutoISF
     @Mock lateinit var bgQualityCheck: BgQualityCheck
     @Mock lateinit var autoIsfLogAnalysis: AutoIsfLogAnalysis
+    @Mock lateinit var phoneStepCounter: PhoneStepCounter
     private lateinit var openAPSAutoISFPlugin: OpenAPSAutoISFPlugin
 
     @BeforeEach fun prepare() {
@@ -37,7 +39,7 @@ class OpenAPSAutoISFPluginTest : TestBaseWithProfile() {
             iobCobCalculator, hardLimits, preferences, dateUtil, processedTbrEbData, persistenceLayer, glucoseStatusProvider,
             bgQualityCheck, notificationManager, determineBasalSMB,
             GlucoseStatusCalculatorAutoIsf(aapsLogger, iobCobCalculator, dateUtil, decimalFormatter, deltaCalculator), { apsResultProvider() }, ch,
-            autoIsfLogAnalysis
+            autoIsfLogAnalysis, phoneStepCounter
         )
     }
 

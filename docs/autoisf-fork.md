@@ -9,9 +9,11 @@ four places. Everything else is upstream AndroidAPS.
 | 2. Meal times and "meal factors outside meal times" | AutoISF settings | no meal time set = as upstream |
 | 3. Slots: own values per meal, weekend and night | Meal slot settings + slot sections | switch off = as upstream |
 | 4. AutoISF log analysis (the tuning card) | card on the AutoISF plugin screen | reads only; writes on "Apply" |
+| 5. Steps and activity (branch `autoisf-steps`) | AutoISF settings → Steps and activity | all 4 switches off = as upstream |
 
 Branches: `autoisf-custom` (1, 2, 4) → `autoisf-slots` (3, phase 1) → `autoisf-slots-2` (weekend,
-night) → `autoisf-analysis` (everything, plus 4 per slot). **Install builds from `autoisf-analysis`.**
+night) → `autoisf-analysis` (everything, plus 4 per slot) → `autoisf-steps` (5, steps). **Install
+builds from `autoisf-analysis`**, or from `autoisf-steps` if you want the step rules.
 Build: GitHub Actions workflow "AutoISF APK" (phone and wear APK; `runTests = true` runs the APS unit
 tests first).
 
@@ -261,3 +263,30 @@ Starting values for the slots, until the analysis says otherwise:
 - The unit tests of the APS module run in the "AutoISF APK" workflow with `runTests = true`. The
   preference schema snapshot (`app/src/testFull/resources/prefs-schema.txt`) is kept by hand and
   sorted.
+
+## 8. Steps and activity (branch `autoisf-steps`)
+
+Four switches in AutoISF settings → **Steps and activity**. All are off; off = as upstream. The rules
+are ported from OpenAPS AIMI (MTR93600/OpenApsAIMI, AGPL-3.0) and **only reduce**: they never add an
+SMB or basal. Without step data nothing fires.
+
+| Switch | What it does |
+|---|---|
+| Count steps with the phone | Reads the phone's step sensor and stores the steps in the database the way a watch does (5/10/15/30/60/180 minute rows, once a minute). Needs the **Physical activity** permission; the app asks for it in the permissions sheet. This also makes the upstream automation trigger "Steps count" work without a watch. Steps from a connected watch are used too (the phone wins while it runs). |
+| Sport guard | During a burst of steps (≥ 400 in 5 min **and** ≥ 800 in 10 min) or sustained activity (≥ 1200/30 min, ≥ 3000/60 min or ≥ 4500/180 min) **no SMB**, and the temp basal stays at or under the profile basal. Released as soon as there are 5 minutes with 0 steps, for example after a walk while a meal is rising. |
+| Longer SMB interval after activity | After > 1500 steps in 3 h with BG < 120 mg/dl (6.7) at least 10 min between SMBs; while still moving (> 100/5 min and > 500/30 min, last SMB older than 20 min) at least 15 min. |
+| Effort protection | From 25 steps/min the SMB gets smaller, at a brisk walk (40/min and more) down to ×0.45. After the walk the protection fades over 30 min (a short walk) up to 120 min (30+ min of walking). A short burst (5 minute window only) reduces the SMB now but does not start the long protection; that needs the 15 minute window. |
+
+The loop log has a line `steps: 5m=… 10m=… 30m=… 60m=… 180m=…; …` and the reason carries
+`sport guard: no SMB`, `effort x0.62: SMB 0.80 -> 0.40U` or `Waiting …`.
+
+A safe start: first only **Count steps with the phone**, look at the step graph and the `steps:` log
+line for a day or two. Then **Effort protection** (the mildest, gradual), then **Sport guard**. The
+upstream automation with the trigger "Steps count" + the action "Start temp target" replaces AIMI's
+"target 130 while active" rule, so that rule is not here.
+
+For developers: `openAPSAutoISF/steps/` – `StepBuckets.kt` (minute buckets, window sums),
+`PhoneStepCounter.kt` (interface; `AndroidPhoneStepCounter` in androidMain, iOS and desktop answer
+"not available"), `AutoIsfSteps.kt` (store to the database, read, memory), `StepsActivityRules.kt`
+and `EffortActivityBelief.kt` (pure rules, tests in `commonTest`). `determine_basal` takes
+`steps_activity: StepsActivity`. Keys `autoISF_steps_*` in `BooleanKey`.

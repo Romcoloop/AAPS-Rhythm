@@ -9,10 +9,12 @@ import app.aaps.core.interfaces.aps.IobTotal
 import app.aaps.core.interfaces.aps.MealData
 import app.aaps.core.interfaces.aps.OapsProfileAutoIsf
 import app.aaps.core.interfaces.aps.RT
+import app.aaps.plugins.aps.openAPSAutoISF.steps.StepsActivity
 import app.aaps.shared.tests.TestBaseWithProfile
 import com.google.common.truth.Truth.assertThat
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import kotlin.math.floor
 
 /**
  * Twin of `DetermineBasalSMBTest`. The two algorithms share this code almost line for line, but only
@@ -243,15 +245,46 @@ class DetermineBasalAutoISFTest : TestBaseWithProfile() {
         assertThat(rT.duration).isEqualTo(30)
     }
 
+    @Test
+    fun `the sport guard gives no SMB and no temp above the profile basal`() {
+        val plain = runWithSmb()
+        assertThat(plain.units).isGreaterThan(0.0)
+
+        val guarded = runWithSmb(steps = StepsActivity(sportGuard = true))
+        assertThat(guarded.units).isNull()
+        assertThat(guarded.reason.toString()).contains("sport guard: no SMB")
+        assertThat(guarded.rate).isAtMost(1.0)
+    }
+
+    @Test
+    fun `the effort factor makes the SMB smaller, rounded down to the bolus step`() {
+        val plain = runWithSmb()
+        val halved = runWithSmb(steps = StepsActivity(effortSmbFactor = 0.5))
+        val expected = floor(plain.units!! * 0.5 * 10) / 10
+        assertThat(halved.units ?: 0.0).isWithin(1e-9).of(expected)
+        assertThat(halved.reason.toString()).contains("effort x0.5")
+    }
+
+    @Test
+    fun `the SMB interval floor makes the loop wait after a recent bolus`() {
+        // last bolus 8 minutes ago: the profile interval of 3 minutes has passed, a floor of 10 has not
+        val plain = runWithSmb(lastBolusAgeMinutes = 8)
+        assertThat(plain.units).isGreaterThan(0.0)
+
+        val spaced = runWithSmb(lastBolusAgeMinutes = 8, steps = StepsActivity(smbIntervalFloorMinutes = 10))
+        assertThat(spaced.units).isNull()
+        assertThat(spaced.reason.toString()).contains("Waiting")
+    }
+
     /** BG high and rising so a bolus is wanted, with enough insulin acting that the worst case lands below target. */
-    private fun runWithSmb(): RT {
+    private fun runWithSmb(lastBolusAgeMinutes: Int = 60, steps: StepsActivity = StepsActivity.NONE): RT {
         val iobs = Array(48) { i ->
             val time = currentTime + i * 5 * 60000L
             IobTotal(
                 time = time,
                 iob = 1.3,
                 activity = 0.0105,
-                lastBolusTime = currentTime - 3600000L,
+                lastBolusTime = currentTime - lastBolusAgeMinutes * 60000L,
                 iobWithZeroTemp = IobTotal(time = time, iob = 1.3, activity = 0.0105)
             )
         }
@@ -272,7 +305,8 @@ class DetermineBasalAutoISFTest : TestBaseWithProfile() {
             smb_max_range_extension = 1.0,
             iob_threshold_percent = 100,
             auto_isf_consoleError = mutableListOf(),
-            auto_isf_consoleLog = mutableListOf()
+            auto_isf_consoleLog = mutableListOf(),
+            steps_activity = steps
         )
     }
 

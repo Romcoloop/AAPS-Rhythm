@@ -9,9 +9,11 @@ miestach. Všetko ostatné je upstream AndroidAPS.
 | 2. Časy jedál a „faktory mimo jedla“ | AutoISF settings | žiadny čas jedla = ako upstream |
 | 3. Sloty: vlastné hodnoty pre jedlo, víkend a noc | Meal slot settings + sekcie slotov | prepínač vypnutý = ako upstream |
 | 4. AutoISF log analysis (ladiaca karta) | karta na obrazovke pluginu AutoISF | len číta; zapisuje po „Použiť“ |
+| 5. Kroky a aktivita (vetva `autoisf-steps`) | AutoISF settings → Steps and activity | všetky 4 prepínače vypnuté = ako upstream |
 
 Vetvy: `autoisf-custom` (1, 2, 4) → `autoisf-slots` (3, fáza 1) → `autoisf-slots-2` (víkend, noc)
-→ `autoisf-analysis` (všetko, plus 4 per slot). **Inštaluj buildy z `autoisf-analysis`.**
+→ `autoisf-analysis` (všetko, plus 4 per slot) → `autoisf-steps` (5, kroky). **Inštaluj buildy
+z `autoisf-analysis`**, alebo z `autoisf-steps`, ak chceš kroky.
 Build: GitHub Actions workflow „AutoISF APK“ (APK pre telefón aj hodinky; `runTests = true` najprv
 spustí unit testy modulu APS).
 
@@ -243,7 +245,7 @@ maxSMBBasalMinutes 30, UAM 30, cieľ 6,2 mmol/l, ISF 2,27 mmol/l/U, CR 12 g/U.
    s globálnym vypínačom. Víkendové sloty až od 10 jedál.
 4. Voliteľné „Vysvetli cez Claude“: appka pošle len zhrnutie a návrh, nikdy surové logy, a model nikdy
    nerozhoduje o dávke.
-5. Neskôr: kroky a tep z hodiniek ako signál aktivity (najprv len logovať), ručný režim
+5. Tep z hodiniek ako druhý signál aktivity (kroky už sú v kapitole 8), ručný režim
    stres / choroba s vlastnými 15 hodnotami.
 
 ## 7. Pre vývojárov
@@ -261,3 +263,30 @@ maxSMBBasalMinutes 30, UAM 30, cieľ 6,2 mmol/l, ISF 2,27 mmol/l/U, CR 12 g/U.
   a „Použiť“.
 - Unit testy modulu APS bežia vo workflow „AutoISF APK“ s `runTests = true`. Snímka schémy
   preferencií (`app/src/testFull/resources/prefs-schema.txt`) sa udržiava ručne, zoradená.
+
+## 8. Kroky a aktivita (vetva `autoisf-steps`)
+
+Štyri prepínače v AutoISF settings → **Steps and activity**. Všetky sú vypnuté; vypnuté = ako
+upstream. Pravidlá sú prenesené z OpenAPS AIMI (MTR93600/OpenApsAIMI, AGPL-3.0) a **len uberajú**:
+nikdy nepridajú SMB ani bazál. Bez údajov o krokoch nič nezasiahne.
+
+| Prepínač | Čo robí |
+|---|---|
+| Count steps with the phone | Číta krokomer telefónu a ukladá kroky do databázy v rovnakej forme ako hodinky (riadky 5/10/15/30/60/180 min, každú minútu). Potrebuje povolenie **Fyzická aktivita** – appka si ho vypýta v hárku povolení. Vďaka tomu funguje aj upstream automatizácia „Steps count“ bez hodiniek. Kroky z pripojených hodiniek sa použijú tiež (telefón má prednosť, ak beží). |
+| Sport guard | Pri dávke krokov (≥ 400 za 5 min **a** ≥ 800 za 10 min) alebo trvalej aktivite (≥ 1200/30 min, ≥ 3000/60 min alebo ≥ 4500/180 min) **žiadne SMB** a temp bazál najviac na úrovni profilu. Uvoľní sa hneď, keď je 5 minút 0 krokov – napríklad po prechádzke pri rastúcom jedle. |
+| Longer SMB interval after activity | Po > 1500 krokoch za 3 h a BG < 120 mg/dl (6,7) aspoň 10 min medzi SMB; kým sa ešte hýbeš (> 100/5 min a > 500/30 min, posledný SMB starší než 20 min) aspoň 15 min. |
+| Effort protection | Od 25 krokov/min je SMB menšie, pri svižnej chôdzi (40/min a viac) až ×0,45. Po skončení chôdze ochrana doznieva 30 min (krátka prechádzka) až 120 min (30+ min chôdze). Krátky „výbeh“ (len 5-min okno) zmenší SMB teraz, ale nespustí dlhú ochranu – na to treba 15-min okno. |
+
+V logu loopu je riadok `steps: 5m=… 10m=… 30m=… 60m=… 180m=…; …` a v dôvode (reason) sú texty
+`sport guard: no SMB`, `effort x0.62: SMB 0.80 -> 0.40U` alebo `Waiting …`.
+
+Bezpečný štart: najprv len **Count steps with the phone**, pozri sa deň-dva na graf krokov a na
+riadok `steps:` v logu. Potom **Effort protection** (najmiernejšie, plynulé), potom **Sport guard**.
+Upstream automatizácia s triggerom „Steps count“ + akciou „Start temp target“ nahrádza AIMI pravidlo
+„cieľ 130 pri aktivite“, preto také pravidlo tu nie je.
+
+Pre vývojárov: `openAPSAutoISF/steps/` – `StepBuckets.kt` (minútové koše, sumy okien),
+`PhoneStepCounter.kt` (rozhranie; `AndroidPhoneStepCounter` v androidMain, iOS a desktop vracajú
+„nedostupné“), `AutoIsfSteps.kt` (ukladanie do DB, čítanie, pamäť), `StepsActivityRules.kt`
+a `EffortActivityBelief.kt` (čisté pravidlá, testy v `commonTest`). `determine_basal` dostáva
+`steps_activity: StepsActivity`. Kľúče `autoISF_steps_*` v `BooleanKey`.

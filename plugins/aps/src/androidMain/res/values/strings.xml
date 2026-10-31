@@ -124,6 +124,10 @@
     <string name="autoisf_slot_breakfast_weekend">Breakfast slot (weekend)</string>
     <string name="autoisf_slot_lunch_weekend">Lunch slot (weekend)</string>
     <string name="autoisf_slot_dinner_weekend">Dinner slot (weekend)</string>
+    <string name="autoisf_steps_title">Steps and activity</string>
+    <string name="autoisf_steps_summary">Count steps with the phone, and make dosing more careful during and after activity</string>
+    <string name="permission_steps_title">Physical activity</string>
+    <string name="permission_steps_description">AutoISF reads the step sensor of the phone to see when you are active, so it can give less insulin during and after a walk.</string>
     <string name="autoisf_slots_copy_global">Copy global values to all slots</string>
     <string name="autoisf_slots_copy_global_summary">Writes the global AutoISF and SMB delivery values into every slot: weekday meals, weekend meals and night. Use it once to start, then change only what should differ. The slot times are not changed.</string>
     <string name="autoisf_slots_copy_global_confirm">Values already set in all slots will be overwritten by the global values. Continue?</string>

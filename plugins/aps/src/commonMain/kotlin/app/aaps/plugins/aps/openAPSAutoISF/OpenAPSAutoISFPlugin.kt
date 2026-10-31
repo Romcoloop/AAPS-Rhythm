@@ -61,10 +61,19 @@ import app.aaps.plugins.aps.events.EventOpenAPSUpdateGui
 import app.aaps.plugins.aps.events.EventResetOpenAPSGui
 import app.aaps.plugins.aps.keys.ApsIntentKey
 import app.aaps.plugins.aps.openAPSAutoISF.logAnalysis.AutoIsfLogAnalysis
+import app.aaps.plugins.aps.openAPSAutoISF.steps.AutoIsfSteps
+import app.aaps.plugins.aps.openAPSAutoISF.steps.PhoneStepCounter
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -99,7 +108,8 @@ open class OpenAPSAutoISFPlugin(
     private val glucoseStatusCalculatorAutoIsf: GlucoseStatusCalculatorAutoIsf,
     private val apsResultProvider: () -> APSResult,
     private val ch: ConcentrationHelper,
-    private val autoIsfLogAnalysis: AutoIsfLogAnalysis
+    private val autoIsfLogAnalysis: AutoIsfLogAnalysis,
+    private val phoneStepCounter: PhoneStepCounter
 ) : PluginBaseWithPreferences(
     PluginDescription()
         .mainType(PluginType.APS)
@@ -137,6 +147,38 @@ open class OpenAPSAutoISFPlugin(
     val autoIsfWeights; get() = preferences.get(BooleanKey.ApsUseAutoIsfWeights)
     /** Per slot values (weekday and weekend meals, night). Falls back to the global value, see [AutoIsfSlots]. */
     private val slots = AutoIsfSlots(preferences) { Instant.fromEpochMilliseconds(dateUtil.now()).toLocalDateTime(TimeZone.currentSystemDefault()) }
+    /** Phone step counter, stored steps and the step rules, see [AutoIsfSteps]. */
+    internal val steps = AutoIsfSteps(preferences, persistenceLayer, phoneStepCounter, aapsLogger)
+    private var stepsScope: CoroutineScope? = null
+
+    override fun requiredPermissions() =
+        if (steps.phoneSourceOn && phoneStepCounter.available) phoneStepCounter.permissions() else emptyList()
+
+    override suspend fun onStart() {
+        super.onStart()
+        val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+        stepsScope = scope
+        // Once a minute: start or stop the phone step counter after its switch, store the steps.
+        scope.launch {
+            while (isActive) {
+                try {
+                    steps.tick(dateUtil.now())
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    aapsLogger.error(LTag.APS, "AutoISF steps tick failed", e)
+                }
+                delay(60_000L)
+            }
+        }
+    }
+
+    override suspend fun onStop() {
+        stepsScope?.cancel()
+        stepsScope = null
+        steps.stop()
+        super.onStop()
+    }
     private val autoISF_max; get() = slots.get(DoubleKey.ApsAutoIsfMax)
     private val autoISF_min; get() = slots.get(DoubleKey.ApsAutoIsfMin)
     private val bgAccel_ISF_weight; get() = slots.get(DoubleKey.ApsAutoIsfBgAccelWeight)
@@ -365,6 +407,9 @@ open class OpenAPSAutoISFPlugin(
         val loopWantedSmb = loop_smb(microBolusAllowed, oapsProfile, iobData.iob, use_iobTH, iobTHvirtual / iobTHtolerance * 100.0)
         val flatBGsDetected = bgQualityCheck.state == BgQualityCheck.State.FLAT
         val smbRatio = determine_varSMBratio(glucoseStatus.glucose.toInt(), target_bg, loopWantedSmb)
+        // Step rules (sport guard, SMB spacing, effort protection); NONE when every switch is off.
+        val stepsActivity = steps.decide(now, glucoseStatus.glucose, iobData.lastBolusTime)
+        if (autoIsfMode && stepsActivity.log.isNotEmpty()) consoleError.add("steps: ${stepsActivity.log}")
 
         aapsLogger.debug(LTag.APS, ">>> Invoking determine_basal AutoISF <<<")
         aapsLogger.debug(LTag.APS, "Glucose status:     $glucoseStatus")
@@ -395,7 +440,8 @@ open class OpenAPSAutoISFPlugin(
             smb_max_range_extension = smbMaxRangeExtension,
             iob_threshold_percent = iobThresholdPercent,
             auto_isf_consoleError = consoleError,
-            auto_isf_consoleLog = consoleLog
+            auto_isf_consoleLog = consoleLog,
+            steps_activity = stepsActivity
         ).also {
             val determineBasalResult = apsResultProvider().with(it)
             // Preserve input data
@@ -995,6 +1041,17 @@ open class OpenAPSAutoISFPlugin(
                     DoubleKey.ApsAutoIsfSmbDeliveryRatioBgRange,
                     DoubleKey.ApsAutoIsfSmbMaxRangeExtension,
                     BooleanKey.ApsAutoIsfSmbOnEvenTarget
+                )
+            ),
+            PreferenceSubScreenDef(
+                key = "auto_isf_steps",
+                title = ApsStrings.autoisf_steps_title,
+                summary = ApsStrings.autoisf_steps_summary,
+                items = listOf(
+                    BooleanKey.ApsAutoIsfStepsPhoneSource,
+                    BooleanKey.ApsAutoIsfStepsSportGuard,
+                    BooleanKey.ApsAutoIsfStepsSmbInterval,
+                    BooleanKey.ApsAutoIsfStepsEffortProtection
                 )
             )
         ),
