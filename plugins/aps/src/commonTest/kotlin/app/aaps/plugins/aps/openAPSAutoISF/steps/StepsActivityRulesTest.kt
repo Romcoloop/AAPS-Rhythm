@@ -65,10 +65,11 @@ class StepsActivityRulesTest {
 
         val on = StepsActivityRules.decide(walk, 100.0, 60.0, sportGuardEnabled = true, smbIntervalEnabled = true, effort = null)
         assertTrue(on.sportGuard)
-        assertEquals(10, on.smbIntervalFloorMinutes)
+        // still moving (400/5 min, 1200/30 min, last SMB 60 min ago) wins over the 10 minutes after activity
+        assertEquals(15, on.smbIntervalFloorMinutes)
         assertTrue(on.active)
         assertTrue(on.log.contains("sport guard"))
-        assertTrue(on.log.contains("at least 10m"))
+        assertTrue(on.log.contains("at least 15m"))
     }
 
     @Test

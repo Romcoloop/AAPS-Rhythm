@@ -116,7 +116,7 @@ jobs:
           # GitHub keeps at most 10 error annotations per step, so compile errors come first.
           {
             grep -E '^e: ' aps-tests.log | sed -E 's#^e: file://([^:]+):([0-9]+):([0-9]+) (.*)#::error file=\1,line=\2::\4#'
-            grep -E '[A-Za-z]+Test > .* FAILED$|AssertionError|AssertionFailedError|^[A-Za-z.]*Exception' aps-tests.log | sed 's/^/::error ::/'
+            grep -B1 -E 'AssertionError|AssertionFailedError|^[A-Za-z.]*Exception' aps-tests.log | sed 's/^/::error ::/'
             grep -A6 'What went wrong' aps-tests.log | grep -v '^> Task' | sed 's/^/::error ::/'
           } | head -10 || true
 
