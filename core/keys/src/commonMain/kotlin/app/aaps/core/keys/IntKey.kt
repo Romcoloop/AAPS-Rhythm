@@ -468,6 +468,44 @@ enum class IntKey(
         unitType = UnitType.PERCENT,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
+    /** Steps within one hour that count as "awake" for [BooleanKey.ApsAutoIsfStepsWakeGate]. */
+    ApsAutoIsfStepsWakeSteps(
+        key = "autoISF_steps_wake_steps",
+        defaultValue = 150,
+        min = 20,
+        max = 2000,
+        title = KeysStrings.pref_title_autoisf_steps_wake_steps,
+        summary = KeysStrings.pref_summary_autoisf_steps_wake_steps,
+        defaultedBySM = true,
+        dependency = BooleanKey.ApsAutoIsfStepsWakeGate,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
+    /** Hour of the day when the morning wake gate starts to watch for steps. */
+    ApsAutoIsfStepsWakeStartHour(
+        key = "autoISF_steps_wake_start_hour",
+        defaultValue = 3,
+        min = 0,
+        max = 12,
+        title = KeysStrings.pref_title_autoisf_steps_wake_start_hour,
+        summary = KeysStrings.pref_summary_autoisf_steps_wake_start_hour,
+        defaultedBySM = true,
+        unitType = UnitType.HOURS,
+        dependency = BooleanKey.ApsAutoIsfStepsWakeGate,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
+    /** Hour of the day when the morning wake gate ends; from here SMBs are allowed again whatever the steps. */
+    ApsAutoIsfStepsWakeEndHour(
+        key = "autoISF_steps_wake_end_hour",
+        defaultValue = 10,
+        min = 1,
+        max = 14,
+        title = KeysStrings.pref_title_autoisf_steps_wake_end_hour,
+        summary = KeysStrings.pref_summary_autoisf_steps_wake_end_hour,
+        defaultedBySM = true,
+        unitType = UnitType.HOURS,
+        dependency = BooleanKey.ApsAutoIsfStepsWakeGate,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
     ApsDynIsfAdjustmentFactor(
         key = "DynISFAdjust",
         defaultValue = 100,

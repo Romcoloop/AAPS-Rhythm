@@ -257,6 +257,15 @@ class DetermineBasalAutoISFTest : TestBaseWithProfile() {
     }
 
     @Test
+    fun `a closed wake gate gives no SMB but still a correcting temp basal`() {
+        val gated = runWithSmb(steps = StepsActivity(wakeGateClosed = true))
+        assertThat(gated.units).isNull()
+        assertThat(gated.reason.toString()).contains("wake gate: asleep, no SMB")
+        // no cap at the profile basal here: the correction is allowed to go by basal, like with SMB off
+        assertThat(gated.rate).isGreaterThan(1.0)
+    }
+
+    @Test
     fun `the effort factor makes the SMB smaller, rounded down to the bolus step`() {
         val plain = runWithSmb()
         val halved = runWithSmb(steps = StepsActivity(effortSmbFactor = 0.5))

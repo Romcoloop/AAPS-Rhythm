@@ -209,6 +209,10 @@ autoISF_steps_effort_protection|BooleanKey|true
 autoISF_steps_phone_source|BooleanKey|true
 autoISF_steps_smb_interval|BooleanKey|true
 autoISF_steps_sport_guard|BooleanKey|true
+autoISF_steps_wake_end_hour|IntKey|true
+autoISF_steps_wake_gate|BooleanKey|true
+autoISF_steps_wake_start_hour|IntKey|true
+autoISF_steps_wake_steps|IntKey|true
 autoISF_weekend_slots_enabled|BooleanKey|true
 autoisf_slots_copy_global|ApsIntentKey|false
 autoisf_slots_copy_weekday_to_weekend|ApsIntentKey|false

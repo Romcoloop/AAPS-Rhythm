@@ -148,7 +148,10 @@ open class OpenAPSAutoISFPlugin(
     /** Per slot values (weekday and weekend meals, night). Falls back to the global value, see [AutoIsfSlots]. */
     private val slots = AutoIsfSlots(preferences) { Instant.fromEpochMilliseconds(dateUtil.now()).toLocalDateTime(TimeZone.currentSystemDefault()) }
     /** Phone step counter, stored steps and the step rules, see [AutoIsfSteps]. */
-    internal val steps = AutoIsfSteps(preferences, persistenceLayer, phoneStepCounter, aapsLogger)
+    internal val steps = AutoIsfSteps(preferences, persistenceLayer, phoneStepCounter, aapsLogger) {
+        val local = Instant.fromEpochMilliseconds(dateUtil.now()).toLocalDateTime(TimeZone.currentSystemDefault())
+        local.hour * 60 + local.minute
+    }
     private var stepsScope: CoroutineScope? = null
 
     override fun requiredPermissions() =
@@ -1051,7 +1054,11 @@ open class OpenAPSAutoISFPlugin(
                     BooleanKey.ApsAutoIsfStepsPhoneSource,
                     BooleanKey.ApsAutoIsfStepsSportGuard,
                     BooleanKey.ApsAutoIsfStepsSmbInterval,
-                    BooleanKey.ApsAutoIsfStepsEffortProtection
+                    BooleanKey.ApsAutoIsfStepsEffortProtection,
+                    BooleanKey.ApsAutoIsfStepsWakeGate,
+                    IntKey.ApsAutoIsfStepsWakeSteps,
+                    IntKey.ApsAutoIsfStepsWakeStartHour,
+                    IntKey.ApsAutoIsfStepsWakeEndHour
                 )
             )
         ),

@@ -12,11 +12,13 @@ data class StepsActivity(
     val smbIntervalFloorMinutes: Int = 0,
     /** SMB size multiplier from the effort belief, 0.45..1.0; 1.0 = no reduction. */
     val effortSmbFactor: Double = 1.0,
+    /** True: no SMB because the morning wake gate is closed (asleep); corrections go by temp basal. */
+    val wakeGateClosed: Boolean = false,
     /** One line for the log, empty when nothing is active. */
     val log: String = "",
 ) {
 
-    val active: Boolean get() = sportGuard || smbIntervalFloorMinutes > 0 || effortSmbFactor < 1.0
+    val active: Boolean get() = sportGuard || smbIntervalFloorMinutes > 0 || effortSmbFactor < 1.0 || wakeGateClosed
 
     companion object {
 
@@ -103,6 +105,7 @@ object StepsActivityRules {
      * Puts the three rules together for one run. Each rule has its own switch.
      *
      * @param effort the effort belief of this run, or null when that switch is off
+     * @param wakeGate the morning wake gate of this run, or null when that switch is off
      */
     fun decide(
         w: StepWindows?,
@@ -111,20 +114,24 @@ object StepsActivityRules {
         sportGuardEnabled: Boolean,
         smbIntervalEnabled: Boolean,
         effort: EffortActivityBelief.Assessment?,
+        wakeGate: WakeGate.Result? = null,
     ): StepsActivity {
         if (w == null) return StepsActivity.NONE
         val guard = sportGuardEnabled && sportGuard(w)
         val floor = if (smbIntervalEnabled) smbIntervalFloorMinutes(w, bg, lastSmbAgeMinutes) else 0
         val factor = effort?.smbFactor ?: 1.0
+        val gateClosed = wakeGate?.blockSmb == true
         val parts = mutableListOf<String>()
         parts.add("steps 5m=${w.steps5} 10m=${w.steps10} 30m=${w.steps30} 60m=${w.steps60} 180m=${w.steps180}")
         if (guard) parts.add("sport guard: SMB 0")
         if (floor > 0) parts.add("SMB interval at least ${floor}m")
         if (effort != null && factor < 1.0) parts.add("effort x${formatFactor(factor)} (${effort.reasons.joinToString(" ")})")
+        if (wakeGate != null && wakeGate.inWindow) parts.add(if (gateClosed) "wake gate: asleep, SMB 0" else "wake gate: awake")
         return StepsActivity(
             sportGuard = guard,
             smbIntervalFloorMinutes = floor,
             effortSmbFactor = factor,
+            wakeGateClosed = gateClosed,
             log = parts.joinToString("; "),
         )
     }

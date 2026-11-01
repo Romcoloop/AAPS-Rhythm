@@ -1156,6 +1156,11 @@ class DetermineBasalAutoISF(
                     microBolus = 0.0
                     rT.reason.append("sport guard: no SMB; ")
                 }
+                // Morning wake gate: asleep, so the correction goes by temp basal like with SMB off.
+                if (steps_activity.wakeGateClosed && microBolus > 0) {
+                    microBolus = 0.0
+                    rT.reason.append("wake gate: asleep, no SMB; ")
+                }
 
                 // calculate a long enough zero temp to eventually correct back up to target
                 val smbTarget = target_bg

@@ -5,6 +5,7 @@ import app.aaps.core.interfaces.db.PersistenceLayer
 import app.aaps.core.interfaces.logging.AAPSLogger
 import app.aaps.core.interfaces.logging.LTag
 import app.aaps.core.keys.BooleanKey
+import app.aaps.core.keys.IntKey
 import app.aaps.core.keys.interfaces.Preferences
 
 /**
@@ -15,7 +16,8 @@ import app.aaps.core.keys.interfaces.Preferences
  *   after the switch and stores the counted steps, in the same six-row form the watch uses, so the
  *   automation trigger "Steps count" and the graph see them too.
  * - [decide] is called once per loop run. It reads the newest steps (phone first, then the database,
- *   so a watch works as well), runs the effort belief and puts the rules together.
+ *   so a watch works as well), runs the effort belief and the morning wake gate and puts the rules
+ *   together.
  *
  * Every rule has its own switch and all are off by default. Off = the run is the same as upstream.
  */
@@ -24,9 +26,12 @@ class AutoIsfSteps(
     private val persistenceLayer: PersistenceLayer,
     private val phone: PhoneStepCounter,
     private val aapsLogger: AAPSLogger,
+    /** Minute of the local day, 0..1439, for the morning wake gate. */
+    private val localMinuteOfDay: () -> Int,
 ) {
 
     private var effortMemory = EffortActivityBelief.Memory()
+    private var wakeState = WakeGate.State()
     private var lastStoredMinute = 0L
 
     /** Last effort assessment, for the log and the tests. */
@@ -39,7 +44,8 @@ class AutoIsfSteps(
     val anyRuleOn: Boolean
         get() = preferences.get(BooleanKey.ApsAutoIsfStepsSportGuard) ||
             preferences.get(BooleanKey.ApsAutoIsfStepsSmbInterval) ||
-            preferences.get(BooleanKey.ApsAutoIsfStepsEffortProtection)
+            preferences.get(BooleanKey.ApsAutoIsfStepsEffortProtection) ||
+            preferences.get(BooleanKey.ApsAutoIsfStepsWakeGate)
 
     /** Starts or stops the phone step counter after the switch, and stores the steps once a minute. */
     suspend fun tick(nowMs: Long) {
@@ -91,7 +97,8 @@ class AutoIsfSteps(
         val sportGuard = preferences.get(BooleanKey.ApsAutoIsfStepsSportGuard)
         val smbInterval = preferences.get(BooleanKey.ApsAutoIsfStepsSmbInterval)
         val effortOn = preferences.get(BooleanKey.ApsAutoIsfStepsEffortProtection)
-        if (!sportGuard && !smbInterval && !effortOn) {
+        val wakeGateOn = preferences.get(BooleanKey.ApsAutoIsfStepsWakeGate)
+        if (!sportGuard && !smbInterval && !effortOn && !wakeGateOn) {
             lastEffort = null
             return StepsActivity.NONE
         }
@@ -100,6 +107,21 @@ class AutoIsfSteps(
             lastEffort = null
             aapsLogger.debug(LTag.APS, "AutoISF steps: a step rule is on but there is no step data")
             return StepsActivity.NONE
+        }
+        val wakeGate = if (wakeGateOn) {
+            val result = WakeGate.evaluate(
+                prior = wakeState,
+                windows = w,
+                localMinuteOfDay = localMinuteOfDay(),
+                wakeSteps = preferences.get(IntKey.ApsAutoIsfStepsWakeSteps),
+                startMinute = preferences.get(IntKey.ApsAutoIsfStepsWakeStartHour) * 60,
+                endMinute = preferences.get(IntKey.ApsAutoIsfStepsWakeEndHour) * 60,
+            )
+            wakeState = result.state
+            result
+        } else {
+            wakeState = WakeGate.State()
+            null
         }
         val effort = if (effortOn) {
             val (assessment, memory) = EffortActivityBelief.assess(w, nowMs, effortMemory)
@@ -110,7 +132,7 @@ class AutoIsfSteps(
         }
         lastEffort = effort
         val lastSmbAgeMinutes = if (lastBolusTimeMs > 0L) (nowMs - lastBolusTimeMs) / 60_000.0 else Double.MAX_VALUE
-        return StepsActivityRules.decide(w, bg, lastSmbAgeMinutes, sportGuard, smbInterval, effort)
+        return StepsActivityRules.decide(w, bg, lastSmbAgeMinutes, sportGuard, smbInterval, effort, wakeGate)
     }
 
     companion object {

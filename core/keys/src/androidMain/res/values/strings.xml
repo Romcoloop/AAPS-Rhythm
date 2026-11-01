@@ -431,6 +431,14 @@
     <string name="pref_summary_autoisf_steps_sport_guard">No SMB, and no temp basal above the profile basal, during a burst of steps (400 in 5 min and 800 in 10 min) or sustained activity (1200 in 30 min, 3000 in 60 min or 4500 in 180 min). Released as soon as there are no steps for 5 minutes. From OpenAPS AIMI.</string>
     <string name="pref_title_autoisf_steps_smb_interval">Longer SMB interval after activity</string>
     <string name="pref_summary_autoisf_steps_smb_interval">At least 10 minutes between SMBs after more than 1500 steps in 3 hours while glucose is under 120 mg/dl (6.7 mmol/l), and at least 15 minutes while still moving. From OpenAPS AIMI.</string>
+    <string name="pref_title_autoisf_steps_wake_gate">Morning: SMB only after waking</string>
+    <string name="pref_summary_autoisf_steps_wake_gate">Between the start and end hour below, no SMB until the phone has counted the number of steps below within one hour. While you sleep, a rising glucose (dawn phenomenon) is corrected by temp basal only, not by SMBs. Once awake, SMBs work as usual until the end hour. Needs step data; without it nothing is blocked.</string>
+    <string name="pref_title_autoisf_steps_wake_steps">Steps that count as awake</string>
+    <string name="pref_summary_autoisf_steps_wake_steps">Steps within one hour. A night visit to the bathroom is 30 to 80 steps, getting up and making breakfast is more than 150.</string>
+    <string name="pref_title_autoisf_steps_wake_start_hour">Morning gate starts at</string>
+    <string name="pref_summary_autoisf_steps_wake_start_hour">Hour of the day, 0 to 12. Before this hour the gate does nothing.</string>
+    <string name="pref_title_autoisf_steps_wake_end_hour">Morning gate ends at</string>
+    <string name="pref_summary_autoisf_steps_wake_end_hour">Hour of the day, 1 to 14. From this hour SMBs are allowed again, whatever the steps.</string>
     <string name="pref_title_autoisf_steps_effort_protection">Effort protection</string>
     <string name="pref_summary_autoisf_steps_effort_protection">Smaller SMBs while walking (from 25 steps per minute) and for 30 to 120 minutes after, depending on how hard and how long. The SMB is reduced to at most 45 percent of its size. Never makes an SMB larger. From OpenAPS AIMI.</string>
     <string name="pref_title_autoisf_outside_meal_factor">Meal factors outside meal times</string>

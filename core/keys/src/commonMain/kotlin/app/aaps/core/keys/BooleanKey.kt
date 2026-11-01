@@ -258,6 +258,15 @@ enum class BooleanKey(
         defaultedBySM = true,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
+    /** In the morning no SMB until the phone has counted N steps in one hour: asleep = corrections by basal only. */
+    ApsAutoIsfStepsWakeGate(
+        "autoISF_steps_wake_gate",
+        false,
+        KeysStrings.pref_title_autoisf_steps_wake_gate,
+        KeysStrings.pref_summary_autoisf_steps_wake_gate,
+        defaultedBySM = true,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
     ApsAutoIsfSmbOnEvenTarget(
         "Enable alternative activation of SMB always",
         false,
