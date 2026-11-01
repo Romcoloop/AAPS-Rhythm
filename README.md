@@ -13,6 +13,18 @@ from the phone's logs. Nothing changes a value on its own.
   guard, SMB spacing after activity, effort protection), all off by default - see chapter 8 of the manual.
 * Everything else is upstream AndroidAPS, see below. Use it at your own risk, as with any AAPS build.
 
+## Credits and licence
+
+* **AutoISF** algorithm: ga-zelle (autoISF for AndroidAPS), as shipped in upstream AAPS.
+* **Step rules** (sport guard, SMB spacing after activity, effort protection, morning gate, branch
+  `autoisf-steps`): ported from **OpenAPS AIMI** by MTR93600 (https://github.com/MTR93600/OpenApsAIMI),
+  file `DetermineBasalAIMI2.kt`. The thresholds are AIMI's; the port lives in
+  `plugins/aps/.../openAPSAutoISF/steps/`.
+* **Blended BG** for bg_ISF: the idea comes from **Boost** (blended BG for the ISF ratio).
+* Everything else: nightscout/AndroidAPS and its contributors.
+
+All of it, this fork included, is licensed under **AGPL-3.0**, so the source stays public.
+
 ---
 
 # AAPS
