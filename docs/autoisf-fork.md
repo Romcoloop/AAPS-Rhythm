@@ -22,6 +22,11 @@ tests first).
 > "Apply" button of the analysis card after a confirmation dialog.
 > This is insulin dosing. Change one value at a time, in small steps, and talk to your diabetes team.
 
+**Credits.** The AutoISF algorithm is ga-zelle's, as in upstream AAPS. The step rules of chapter 8
+are ported from **OpenAPS AIMI** by MTR93600 (https://github.com/MTR93600/OpenApsAIMI,
+`DetermineBasalAIMI2.kt`), with AIMI's thresholds. The blended BG idea (chapter 1) comes from
+**Boost**. Everything, this fork included, is AGPL-3.0.
+
 ## 1. Blended BG
 
 `bg_ISF` normally looks at the current BG only, so it reacts late when BG rises fast. With a weight

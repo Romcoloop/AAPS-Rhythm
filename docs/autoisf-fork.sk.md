@@ -23,6 +23,11 @@ spustí unit testy modulu APS).
 > Ide o dávkovanie inzulínu. Meň jednu hodnotu naraz, po malých krokoch, a konzultuj so svojím
 > diabetologickým tímom.
 
+**Autorstvo.** Algoritmus AutoISF je od ga-zelle, ako v upstream AAPS. Pravidlá krokov v kapitole 8
+sú prevzaté z **OpenAPS AIMI** od MTR93600 (https://github.com/MTR93600/OpenApsAIMI,
+`DetermineBasalAIMI2.kt`), s prahmi z AIMI. Nápad blended BG (kapitola 1) je z **Boostu**. Všetko,
+vrátane tohto forku, je pod licenciou AGPL-3.0.
+
 ## 1. Blended BG
 
 `bg_ISF` sa bežne pozerá len na aktuálnu BG, takže pri rýchlom raste reaguje neskoro. Pri váhe nad 0
