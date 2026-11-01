@@ -9,6 +9,8 @@ name: AutoISF APK
 #   KEY_ALIAS          alias of the key (for example key0)
 #   KEY_PASSWORD       password of the key
 # Use the same keystore as the APK on the phone, or the new APK cannot be installed over it.
+# Optional fifth secret RCLONE_GDRIVE_TOKEN: the APKs are also copied to Google Drive, see the
+# "Copy APK to Google Drive" step.
 
 on:
   workflow_dispatch:
@@ -163,6 +165,25 @@ jobs:
           path: out/*.apk
           retention-days: 14
           if-no-files-found: error
+
+      # Copies the two APKs to Google Drive, folder AAPS-builds/<branch>/, through rclone with the
+      # owner's own Drive token (secret RCLONE_GDRIVE_TOKEN, scope drive.file: rclone sees only what
+      # it uploaded itself). The token is the "token = {...}" line of `rclone config show gdrive`.
+      # Without the secret the step is skipped; a Drive error does not fail the run, the APK is
+      # still on the run page.
+      - name: Copy APK to Google Drive
+        if: ${{ secrets.RCLONE_GDRIVE_TOKEN != '' }}
+        continue-on-error: true
+        env:
+          RCLONE_GDRIVE_TOKEN: ${{ secrets.RCLONE_GDRIVE_TOKEN }}
+        run: |
+          curl -fsSL https://rclone.org/install.sh | sudo bash > /dev/null
+          export RCLONE_CONFIG_GDRIVE_TYPE=drive
+          export RCLONE_CONFIG_GDRIVE_SCOPE=drive.file
+          export RCLONE_CONFIG_GDRIVE_TOKEN="$RCLONE_GDRIVE_TOKEN"
+          BRANCH="${GITHUB_REF_NAME//\//-}"
+          rclone copy out "gdrive:AAPS-builds/$BRANCH/" --include '*.apk' --drive-use-trash=false -v
+          echo "Copied to Google Drive: AAPS-builds/$BRANCH/$APK_NAME.apk and $APK_NAME-wear.apk"
 
       - name: Remove keystore
         if: always()
