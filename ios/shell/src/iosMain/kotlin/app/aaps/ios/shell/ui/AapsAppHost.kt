@@ -36,6 +36,7 @@ import app.aaps.core.interfaces.notifications.IosNotificationDelegate
 import app.aaps.core.interfaces.protection.ProtectionCheck
 import app.aaps.core.interfaces.protection.ProtectionResult
 import app.aaps.core.interfaces.resources.TextRefValueRegistry
+import app.aaps.core.interfaces.utils.fabric.CrashReporter
 import app.aaps.core.keys.BooleanNonKey
 import app.aaps.core.keys.StringKey
 import app.aaps.core.objects.di.CoreObjectsGraph
@@ -47,6 +48,7 @@ import app.aaps.core.ui.compose.metroViewModel
 import app.aaps.core.ui.compose.rememberOwnViewModelStoreOwner
 import app.aaps.core.ui.compose.stringResource
 import app.aaps.implementation.lifecycle.IosProtectionLifecycle
+import app.aaps.implementation.logging.AAPSLoggerIos
 import app.aaps.implementation.protection.KeychainUnavailableException
 import app.aaps.ios.shell.IosAppStartup
 import app.aaps.ios.shell.PluginStoreRegistry
@@ -83,6 +85,9 @@ import app.aaps.ui.compose.treatments.viewmodels.TreatmentsViewModel
 import app.aaps.ui.compose.treatmentsSheet.TreatmentViewModel
 import app.aaps.ui.search.SearchViewModel
 import dev.zacsweers.metro.createGraphFactory
+import kotlin.experimental.ExperimentalNativeApi
+import kotlin.native.setUnhandledExceptionHook
+import kotlin.native.terminateWithUnhandledException
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import platform.Foundation.NSNotificationCenter
@@ -114,8 +119,9 @@ import platform.UIKit.UIViewController
  * platform is supposed to supply - opening a document picker, asking for a permission - and each
  * needs an iOS answer of its own rather than a shared one.
  */
-fun aapsAppViewController(nsSocketFactory: NsSocketFactory): UIViewController {
-    val startup = runCatching { startApp(nsSocketFactory) }
+fun aapsAppViewController(nsSocketFactory: NsSocketFactory, crashReporter: CrashReporter): UIViewController {
+    installCrashLogging()
+    val startup = runCatching { startApp(nsSocketFactory, crashReporter) }
     return ComposeUIViewController {
         // State, because "Start fresh" and "Try again" on the failure screen start the app a second time
         // in place. iOS gives an app no way to restart itself.
@@ -129,17 +135,51 @@ fun aapsAppViewController(nsSocketFactory: NsSocketFactory): UIViewController {
                         explanation = failureExplanation(error),
                         error = error,
                         // A failure of either one lands on this same screen again.
-                        onRetry = if (error is KeychainUnavailableException) ({ current = runCatching { startApp(nsSocketFactory) } }) else null,
+                        onRetry = if (error is KeychainUnavailableException) ({ current = runCatching { startApp(nsSocketFactory, crashReporter) } }) else null,
                         onStartFresh = if (error is StoreUnreadableException) ({
                             current = runCatching {
                                 IosStorage.startFresh()
-                                startApp(nsSocketFactory)
+                                startApp(nsSocketFactory, crashReporter)
                             }
                         }) else null
                     )
                 }
             }
         )
+    }
+}
+
+/** Set once. [aapsAppViewController] is called once by Swift, but a second call must not add a second hook. */
+private var crashLoggingInstalled = false
+
+/**
+ * Writes the exception that is about to stop the app into `aaps.log`.
+ *
+ * An uncaught Kotlin exception on iOS ends in `abort()`, so the process dies with SIGABRT. The crash
+ * report iOS keeps afterwards holds the whole Kotlin stack, frame by frame - but not the exception
+ * **type or message**. Kotlin prints those to stdout and stderr, and nothing on a phone records
+ * either. A real crash of this app on 2026-10-25 left 49 readable frames in the system report and
+ * not one line in the app's own log, so the only question anybody actually asks - what went wrong -
+ * was the one thing missing.
+ *
+ * This hook writes the type, the message and the stack to the file the "Send logs" button shares,
+ * and then ends the process the way the runtime would have.
+ *
+ * Installed here rather than inside [startApp], which runs again for "Try again" and "Start fresh".
+ *
+ * The logger is built here instead of taken from the graph on purpose: when this runs the graph may
+ * be half built, or already gone, and a crash reporter that needs a working app is no use.
+ */
+@OptIn(ExperimentalNativeApi::class)
+private fun installCrashLogging() {
+    if (crashLoggingInstalled) return
+    crashLoggingInstalled = true
+    val logger = AAPSLoggerIos()
+    setUnhandledExceptionHook { throwable ->
+        // Nothing in here may throw. A failure inside the hook replaces a readable crash with a
+        // confusing one, and the process still has to end either way.
+        runCatching { logger.error(LTag.CORE, "Uncaught exception, the app is stopping", throwable) }
+        terminateWithUnhandledException(throwable)
     }
 }
 
@@ -159,13 +199,23 @@ private class StartedApp(
  * message, which the failure screen can act on, instead of failing somewhere inside the first screen.
  * And so that the screen can call this again.
  */
-private fun startApp(nsSocketFactory: NsSocketFactory): StartedApp {
+private fun startApp(nsSocketFactory: NsSocketFactory, crashReporter: CrashReporter): StartedApp {
     val store = IosStorage.open()
     // Built once, outside the composition: a graph rebuilt on each recomposition would hand out new
     // singletons every frame - a new database wrapper, a new preference store.
-    val graph = createGraphFactory<IosAppGraph.Factory>().create(CoreObjectsGraph, ClientGraphBindings, nsSocketFactory)
+    val graph = createGraphFactory<IosAppGraph.Factory>().create(CoreObjectsGraph, ClientGraphBindings, nsSocketFactory, crashReporter)
     val viewModelFactory = ClientViewModelFactory(graph)
     val logger = graph.logger
+
+    // Tell Crashlytics the stored answer before anything can crash. Its own signal handler catches a
+    // fatal crash whether or not Kotlin calls it, so gating the call sites alone would cover the
+    // non-fatals and silently miss the crashes. Pushed here rather than from the reporter's own
+    // constructor, which runs whenever something first injects it - possibly never, possibly late.
+    //
+    // Asked through `fabricEnabled()`, not `preferences.get`: this key is `defaultedBySM`, so
+    // `PreferencesImpl` answers the shared default - true - in Simple Mode, which would switch
+    // collection on for precisely the users whose settings screen never shows them the row.
+    crashReporter.setCollectionEnabled(graph.fabricPrivacy.fabricEnabled())
 
     // Before the composition, not beside it: the first view model built reads the active pump, and
     // an empty plugin list there throws from a coroutine and takes the process with it.
