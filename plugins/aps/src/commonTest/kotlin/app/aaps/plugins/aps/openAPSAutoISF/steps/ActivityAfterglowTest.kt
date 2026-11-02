@@ -77,11 +77,11 @@ class ActivityAfterglowTest {
         assertEquals(0.0, hold.basalFactor)
 
         // 10 minutes: the taper starts at 0.5
-        val (t0, m2) = ActivityAfterglow.assess(still(), 120.0, 0.0, t0 + 10 * minute, m1)
-        assertEquals(Phase.TAPER, t0.phase)
-        assertFalse(t0.smbBlocked)
-        assertEquals(0.5, t0.smbFactor, 1e-9)
-        assertEquals(0.5, t0.basalFactor, 1e-9)
+        val (start, m2) = ActivityAfterglow.assess(still(), 120.0, 0.0, t0 + 10 * minute, m1)
+        assertEquals(Phase.TAPER, start.phase)
+        assertFalse(start.smbBlocked)
+        assertEquals(0.5, start.smbFactor, 1e-9)
+        assertEquals(0.5, start.basalFactor, 1e-9)
 
         // 40 minutes: halfway (30 of 60 minutes) = 0.75
         val (half, m3) = ActivityAfterglow.assess(still(), 120.0, 0.0, t0 + 40 * minute, m2)
