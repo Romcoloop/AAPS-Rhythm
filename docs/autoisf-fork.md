@@ -278,13 +278,13 @@ SMB or basal. Without step data nothing fires.
 | Switch | What it does |
 |---|---|
 | Count steps with the phone | Reads the phone's step sensor and stores the steps in the database the way a watch does (5/10/15/30/60/180 minute rows, once a minute). Needs the **Physical activity** permission; the app asks for it in the permissions sheet. This also makes the upstream automation trigger "Steps count" work without a watch. Steps from a connected watch are used too (the phone wins while it runs). |
-| Sport guard | Three levels from the steps: **mild** (≥ 2500 steps/60 min), **guard** (≥ 2000/30 min, ≥ 4000/60 min or a burst of ≥ 400/5 min **and** ≥ 800/10 min) and **long** (≥ 6000/60 min or ≥ 7000/180 min). While you move: temp basal **0 %**, SMB 0 (mild: SMB × 0.8). After the movement stops: guard and long keep 10 minutes with no basal and no SMB (hold), mild has no hold. Then SMB and temp basal go back to 100 % in a straight line, from 80 % (mild, 30 min) or 50 % (guard 60 min, long 120 min). A real walk (25 steps/min over 15 min) starts it again, a few steps at home do not. If glucose is above 10 mmol/l and rising, the way back is half as long. If glucose is under 4.5 mmol/l or falls fast, SMB stays 0 (basal follows the ramp). Used together with Effort protection, the stricter SMB factor counts. The memory of the movement is lost when the app restarts. |
+| Sport guard | Three levels from the steps (mild, guard, long). While you move: temp basal **0 %**, SMB 0 (mild: SMB × 0.8). After you stop: a short hold, then SMB and temp basal come back to 100 % slowly (30 to 120 minutes). See 8.1. |
 | Longer SMB interval after activity | After > 1500 steps in 3 h with BG < 120 mg/dl (6.7) at least 10 min between SMBs; while still moving (> 100/5 min and > 500/30 min, last SMB older than 20 min) at least 15 min. |
 | Morning: SMB only after waking | Between the start and end hour (default 03:00–10:00) **no SMB until the phone has counted N steps within one hour** (default 150, a setting). While asleep a dawn rise is corrected by temp basal only (as with SMB off). Waking is a latch: once open, the gate stays open until the end hour, also while sitting still at breakfast. Outside the window the latch is reset. Without step data nothing is blocked. Steps do not tell dawn from a meal; they tell sleep from being awake. Once awake, the rise shape (acce_ISF) and a declared meal decide. |
 | Effort protection | From 25 steps/min the SMB gets smaller, at a brisk walk (40/min and more) down to ×0.45. After the walk the protection fades over 30 min (a short walk) up to 120 min (30+ min of walking). A short burst (5 minute window only) reduces the SMB now but does not start the long protection; that needs the 15 minute window. |
 
 The loop log has a line `steps: 5m=… 10m=… 30m=… 60m=… 180m=…; …` and the reason carries
-`sport guard: no SMB`, `effort x0.62: SMB 0.80 -> 0.40U` or `Waiting …`.
+`afterglow …` and `sport guard: …` (see 8.1), `effort x0.62: SMB 0.80 -> 0.40U` or `Waiting …`.
 
 A safe start: first only **Count steps with the phone**, look at the step graph and the `steps:` log
 line for a day or two. Then **Effort protection** (the mildest, gradual), then **Sport guard**. The
@@ -295,4 +295,48 @@ For developers: `openAPSAutoISF/steps/` – `StepBuckets.kt` (minute buckets, wi
 `PhoneStepCounter.kt` (interface; `AndroidPhoneStepCounter` in androidMain, iOS and desktop answer
 "not available"), `AutoIsfSteps.kt` (store to the database, read, memory), `StepsActivityRules.kt`,
 `EffortActivityBelief.kt` and `WakeGate.kt` (pure rules, tests in `commonTest`). `determine_basal` takes
-`steps_activity: StepsActivity`. Keys `autoISF_steps_*` in `BooleanKey`.
+`steps_activity: StepsActivity`. Keys `autoISF_steps_*` in `BooleanKey`. The sport guard is `ActivityAfterglow.kt`
+(pure, with its memory kept in `AutoIsfSteps`); the temp basal limit runs after the dosing in
+`DetermineBasalAutoISF.limitBasalBySteps`.
+
+### 8.1 Sport guard in detail
+
+The old guard let go at once when there were 0 steps in 5 minutes, and the dosing jumped back to
+100 %. Now it has three levels and a slow way back.
+
+| Level | Starts with (step sums) | While you move | After you stop |
+|---|---|---|---|
+| Mild | ≥ 2500 steps in 60 min | basal 0 %, SMB × 0.8 | no hold; SMB and basal go from 80 % to 100 % in 30 min |
+| Guard | ≥ 2000 in 30 min, ≥ 4000 in 60 min, or ≥ 400 in 5 min **and** ≥ 800 in 10 min | basal 0 %, SMB 0 | 10 min hold (basal 0 %, SMB 0), then 50 % to 100 % in 60 min |
+| Long | ≥ 6000 in 60 min or ≥ 7000 in 180 min | basal 0 %, SMB 0 | 10 min hold, then 50 % to 100 % in 120 min |
+
+"Basal 0 %" is a zero temp basal. In the way back, "basal 50 %" means the temp basal may not be above
+50 % of the profile basal. A lower temp stays as it is. The limit only makes the basal smaller.
+
+Example, a 40 minute walk (guard level), 12:00 is the last step:
+12:00–12:10 hold, no basal, no SMB · 12:10 SMB and basal at 50 % · 12:40 at 75 % · 13:10 back at 100 %.
+
+Good to know:
+- **How the level is chosen:** the level is taken at the time of the movement and kept in a memory.
+  After the walk the 60 and 180 minute sums stay high for hours, so they are not used for the way
+  back. A new level during the same way back can only be higher.
+- **Moving or not:** "moving now" needs at least 100 steps in the last 5 minutes. A walk that goes on
+  or starts again during the way back must also show 25 steps/min over 15 minutes. A few steps at
+  home (the kitchen, the toilet) do not start the hold again.
+- **High and rising glucose:** above 10 mmol/l (180 mg/dl) and rising, the way back is half as long,
+  so a meal is not blocked for an hour.
+- **Low or falling glucose:** under 4.5 mmol/l (81 mg/dl) or a fall of 5 mg/dl in 5 minutes or more,
+  the SMB stays 0 during the way back. The basal still follows the ramp.
+- **With Effort protection:** the stricter SMB factor of the two counts. They are not multiplied.
+- **Bad glucose data:** if the run gives up (old data, noise, flat line), the guard does not set a zero
+  temp. The loop never suspends on bad data.
+- **Memory:** it is kept in the app only. After a restart of the app there is no way back, the
+  guard starts again with the next walk.
+- **No step data:** the guard does nothing and the memory is kept for the time of the gap.
+- The numbers are in the code (`ActivityAfterglow.kt`), not in the settings. Tell me if one of them is
+  too strong or too weak after a few days of the log.
+
+In the log (loop reason):
+`afterglow GUARD: moving, basal 0%, SMB 0` · `afterglow GUARD: hold 4/10m, basal 0%, SMB 0` ·
+`afterglow GUARD: taper 20/60m, x0.67` (+ `high and rising, half length` or `low or falling, SMB 0`) ·
+`sport guard: temp basal 1.2 -> 0U/hr` (the basal limit changed the temp) · `sport guard: no SMB`.

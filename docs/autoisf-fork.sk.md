@@ -278,13 +278,13 @@ nikdy nepridajú SMB ani bazál. Bez údajov o krokoch nič nezasiahne.
 | Prepínač | Čo robí |
 |---|---|
 | Count steps with the phone | Číta krokomer telefónu a ukladá kroky do databázy v rovnakej forme ako hodinky (riadky 5/10/15/30/60/180 min, každú minútu). Potrebuje povolenie **Fyzická aktivita** – appka si ho vypýta v hárku povolení. Vďaka tomu funguje aj upstream automatizácia „Steps count“ bez hodiniek. Kroky z pripojených hodiniek sa použijú tiež (telefón má prednosť, ak beží). |
-| Sport guard | Tri úrovne podľa krokov: **mierna** (≥ 2500 krokov/60 min), **guard** (≥ 2000/30 min, ≥ 4000/60 min alebo dávka ≥ 400/5 min **a** ≥ 800/10 min) a **dlhá** (≥ 6000/60 min alebo ≥ 7000/180 min). Počas pohybu: temp bazál **0 %**, SMB 0 (mierna: SMB × 0,8). Po skončení pohybu: guard a dlhá držia 10 minút bez bazálu a bez SMB (pridržanie), mierna pridržanie nemá. Potom sa SMB aj temp bazál plynulo vracajú na 100 % z úrovne 80 % (mierna, 30 min) alebo 50 % (guard 60 min, dlhá 120 min). Znovu ho spustí skutočná chôdza (25 krokov/min za 15 min), pár krokov doma nie. Pri glykémii nad 10 mmol/l a stúpajúcej je návrat dvakrát kratší. Pri glykémii pod 4,5 mmol/l alebo rýchlom páde ostávajú SMB na 0 (bazál ide podľa rampy). Spolu s Effort protection platí prísnejší faktor SMB. Pamäť o pohybe sa po reštarte appky stratí. |
+| Sport guard | Tri úrovne podľa krokov (mierna, guard, dlhá). Počas pohybu: temp bazál **0 %**, SMB 0 (mierna: SMB × 0,8). Po zastavení: krátke pridržanie, potom sa SMB a temp bazál pomaly vracajú na 100 % (30 až 120 minút). Pozri 8.1. |
 | Longer SMB interval after activity | Po > 1500 krokoch za 3 h a BG < 120 mg/dl (6,7) aspoň 10 min medzi SMB; kým sa ešte hýbeš (> 100/5 min a > 500/30 min, posledný SMB starší než 20 min) aspoň 15 min. |
 | Morning: SMB only after waking | Medzi začiatkom a koncom rannej fázy (default 03:00–10:00) **žiadne SMB, kým telefón nenapočíta N krokov za hodinu** (default 150, nastaviteľné). Kým spíš, dawn rise koriguje len temp bazál (ako pri vypnutom SMB). Zobudenie je latch: raz otvorená brána ostane otvorená do konca fázy, aj keď sedíš pri raňajkách. Mimo fázy sa latch resetuje. Bez údajov o krokoch neblokuje nič. Kroky nerozlíšia dawn od jedla – rozlíšia spánok od bdenia; po zobudení rozhoduje tvar rastu (acce_ISF) a deklarácia jedla. |
 | Effort protection | Od 25 krokov/min je SMB menšie, pri svižnej chôdzi (40/min a viac) až ×0,45. Po skončení chôdze ochrana doznieva 30 min (krátka prechádzka) až 120 min (30+ min chôdze). Krátky „výbeh“ (len 5-min okno) zmenší SMB teraz, ale nespustí dlhú ochranu – na to treba 15-min okno. |
 
 V logu loopu je riadok `steps: 5m=… 10m=… 30m=… 60m=… 180m=…; …` a v dôvode (reason) sú texty
-`sport guard: no SMB`, `effort x0.62: SMB 0.80 -> 0.40U` alebo `Waiting …`.
+`afterglow …` a `sport guard: …` (pozri 8.1), `effort x0.62: SMB 0.80 -> 0.40U` alebo `Waiting …`.
 
 Bezpečný štart: najprv len **Count steps with the phone**, pozri sa deň-dva na graf krokov a na
 riadok `steps:` v logu. Potom **Effort protection** (najmiernejšie, plynulé), potom **Sport guard**.
@@ -295,4 +295,49 @@ Pre vývojárov: `openAPSAutoISF/steps/` – `StepBuckets.kt` (minútové koše,
 `PhoneStepCounter.kt` (rozhranie; `AndroidPhoneStepCounter` v androidMain, iOS a desktop vracajú
 „nedostupné“), `AutoIsfSteps.kt` (ukladanie do DB, čítanie, pamäť), `StepsActivityRules.kt`,
 `EffortActivityBelief.kt` a `WakeGate.kt` (čisté pravidlá, testy v `commonTest`). `determine_basal` dostáva
-`steps_activity: StepsActivity`. Kľúče `autoISF_steps_*` v `BooleanKey`.
+`steps_activity: StepsActivity`. Kľúče `autoISF_steps_*` v `BooleanKey`. Sport guard je `ActivityAfterglow.kt`
+(čistý, pamäť drží `AutoIsfSteps`); limit temp bazálu beží po výpočte dávky v
+`DetermineBasalAutoISF.limitBasalBySteps`.
+
+### 8.1 Sport guard podrobne
+
+Starý guard sa uvoľnil hneď, keď bolo 5 minút 0 krokov, a dávkovanie skočilo späť na 100 %. Teraz
+má tri úrovne a pomalý návrat.
+
+| Úroveň | Začína pri (sumy krokov) | Počas pohybu | Po zastavení |
+|---|---|---|---|
+| Mierna | ≥ 2500 krokov za 60 min | bazál 0 %, SMB × 0,8 | bez pridržania; SMB a bazál z 80 % na 100 % za 30 min |
+| Guard | ≥ 2000 za 30 min, ≥ 4000 za 60 min, alebo ≥ 400 za 5 min **a** ≥ 800 za 10 min | bazál 0 %, SMB 0 | 10 min pridržanie (bazál 0 %, SMB 0), potom 50 % na 100 % za 60 min |
+| Dlhá | ≥ 6000 za 60 min alebo ≥ 7000 za 180 min | bazál 0 %, SMB 0 | 10 min pridržanie, potom 50 % na 100 % za 120 min |
+
+„Bazál 0 %“ je nulový temp bazál. Pri návrate „bazál 50 %“ znamená, že temp bazál nesmie byť nad
+50 % bazálu z profilu. Nižší temp ostane, ako je. Limit bazál len zmenšuje.
+
+Príklad, 40-minútová prechádzka (úroveň guard), posledný krok o 12:00:
+12:00–12:10 pridržanie, bez bazálu a bez SMB · 12:10 SMB a bazál na 50 % · 12:40 na 75 % · 13:10 späť
+na 100 %.
+
+Dobré vedieť:
+- **Ako sa vyberie úroveň:** úroveň sa určí v čase pohybu a drží sa v pamäti. Po prechádzke ostanú
+  60- a 180-minútové sumy vysoké celé hodiny, preto sa na návrat nepoužívajú. Nová úroveň počas
+  jedného návratu môže byť len vyššia.
+- **Pohyb alebo nie:** „hýbeš sa teraz“ vyžaduje aspoň 100 krokov za posledných 5 minút. Chôdza, ktorá
+  pokračuje alebo sa obnoví počas návratu, musí navyše ukázať 25 krokov/min za 15 minút. Pár krokov
+  doma (kuchyňa, WC) pridržanie znova nespustí.
+- **Vysoká a stúpajúca glykémia:** nad 10 mmol/l (180 mg/dl) a stúpa → návrat je dvakrát kratší,
+  aby sa jedlo neblokovalo hodinu.
+- **Nízka alebo klesajúca glykémia:** pod 4,5 mmol/l (81 mg/dl) alebo pokles 5 mg/dl za 5 minút
+  a viac → SMB ostáva počas návratu na 0. Bazál ide ďalej podľa rampy.
+- **S Effort protection:** platí prísnejší faktor SMB z oboch. Nenásobia sa.
+- **Zlé dáta z CGM:** ak beh vzdá (staré dáta, šum, rovná čiara), guard nenastaví nulový temp.
+  Loop pri zlých dátach nikdy nezastaví inzulín.
+- **Pamäť:** je len v appke. Po reštarte appky nie je žiadny návrat, guard sa spustí znova pri
+  ďalšej chôdzi.
+- **Bez údajov o krokoch:** guard nerobí nič a pamäť sa počas medzery zachová.
+- Čísla sú v kóde (`ActivityAfterglow.kt`), nie v nastaveniach. Ak bude po pár dňoch logu niektoré
+  príliš silné alebo slabé, dáme to upraviť.
+
+V logu (reason loopu):
+`afterglow GUARD: moving, basal 0%, SMB 0` · `afterglow GUARD: hold 4/10m, basal 0%, SMB 0` ·
+`afterglow GUARD: taper 20/60m, x0.67` (+ `high and rising, half length` alebo `low or falling, SMB 0`) ·
+`sport guard: temp basal 1.2 -> 0U/hr` (limit bazálu zmenil temp) · `sport guard: no SMB`.
