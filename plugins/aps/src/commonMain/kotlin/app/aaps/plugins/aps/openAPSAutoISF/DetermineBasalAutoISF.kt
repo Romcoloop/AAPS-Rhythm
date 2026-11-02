@@ -208,7 +208,54 @@ class DetermineBasalAutoISF(
         return rT
     }
 
+    /**
+     * One loop run. The dosing of [determineBasalCore] is limited by the sport guard afterwards:
+     * the temp basal may not be above `StepsActivity.basalFactor` times the profile basal.
+     */
     fun determine_basal(
+        glucose_status: GlucoseStatus, currenttemp: CurrentTemp, iob_data_array: Array<IobTotal>, profile: OapsProfileAutoIsf, autosens_data: AutosensResult, meal_data: MealData,
+        microBolusAllowed: Boolean, currentTime: Long, flatBGsDetected: Boolean, autoIsfMode: Boolean, loop_wanted_smb: String, profile_percentage: Int, smb_ratio: Double,
+        smb_max_range_extension: Double, iob_threshold_percent: Int, auto_isf_consoleError: MutableList<String>, auto_isf_consoleLog: MutableList<String>,
+        /** The step rules of this run (sport guard, SMB spacing, effort protection). NONE = the same as upstream. */
+        steps_activity: StepsActivity = StepsActivity.NONE
+    ): RT {
+        val rT = determineBasalCore(
+            glucose_status, currenttemp, iob_data_array, profile, autosens_data, meal_data, microBolusAllowed, currentTime, flatBGsDetected, autoIsfMode,
+            loop_wanted_smb, profile_percentage, smb_ratio, smb_max_range_extension, iob_threshold_percent, auto_isf_consoleError, auto_isf_consoleLog, steps_activity
+        )
+        return limitBasalBySteps(rT, steps_activity.basalFactor, profile, currenttemp)
+    }
+
+    /**
+     * Sport guard, temp basal part: what the pump would run after this result may not be above
+     * `basalFactor` * profile basal. 0.0 gives a zero temp. A temp that is already lower is kept.
+     * Only makes the basal smaller, never larger.
+     */
+    internal fun limitBasalBySteps(rT: RT, basalFactor: Double, profile: OapsProfileAutoIsf, currenttemp: CurrentTemp): RT {
+        if (basalFactor >= 1.0 || !basalFactor.isFinite()) return rT
+        // The run gave up (bad glucose data, a broken value): no eventualBG or a non-finite one. Those
+        // runs never suspend and never guess a rate, also not for the sport guard.
+        if (rT.eventualBG?.isFinite() != true) return rT
+        val basal = round_basal(profile.current_basal)
+        val limit = round_basal(basal * basalFactor.coerceAtLeast(0.0))
+        val newRate = rT.rate
+        val newDuration = rT.duration
+        // After this result the pump runs: the new temp, the profile basal (new temp of 0 minutes = cancel),
+        // or what runs now (no new temp).
+        val runningAfter = when {
+            newRate != null && newDuration != null && newDuration > 0 -> newRate
+            newRate != null                                           -> basal
+            currenttemp.duration > 0                                  -> currenttemp.rate
+            else                                                      -> basal
+        }
+        if (runningAfter <= limit) return rT
+        rT.rate = limit
+        rT.duration = 30
+        rT.reason.append("sport guard: temp basal ${round(runningAfter, 2)} -> ${round(limit, 2)}U/hr; ")
+        return rT
+    }
+
+    private fun determineBasalCore(
         glucose_status: GlucoseStatus, currenttemp: CurrentTemp, iob_data_array: Array<IobTotal>, profile: OapsProfileAutoIsf, autosens_data: AutosensResult, meal_data: MealData,
         microBolusAllowed: Boolean, currentTime: Long, flatBGsDetected: Boolean, autoIsfMode: Boolean, loop_wanted_smb: String, profile_percentage: Int, smb_ratio: Double,
         smb_max_range_extension: Double, iob_threshold_percent: Int, auto_isf_consoleError: MutableList<String>, auto_isf_consoleLog: MutableList<String>,
@@ -1235,12 +1282,6 @@ class DetermineBasalAutoISF(
             }
 
             val maxSafeBasal = getMaxSafeBasal(profile)
-
-            // Sport guard: no high temp either. Insulin that the SMB did not give must not come as basal.
-            if (steps_activity.sportGuard && rate > basal) {
-                rT.reason.append("sport guard: rate ${round(rate, 2)} capped at basal ${round(basal, 2)}U/hr, ")
-                rate = round_basal(basal)
-            }
 
             if (rate > maxSafeBasal) {
                 rT.reason.append("adj. req. rate: ${round(rate, 2)} to maxSafeBasal: ${maxSafeBasal.withoutZeros()}, ")

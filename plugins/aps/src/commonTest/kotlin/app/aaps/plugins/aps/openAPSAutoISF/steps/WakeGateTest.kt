@@ -60,12 +60,12 @@ class WakeGateTest {
     @Test
     fun `decide carries the closed gate and logs it`() {
         val closed = eval(WakeGate.State(), w(10), 5 * 60)
-        val d = StepsActivityRules.decide(w(10), 100.0, 60.0, false, false, null, closed)
+        val d = StepsActivityRules.decide(w(10), 100.0, 60.0, false, null, null, closed)
         assertTrue(d.wakeGateClosed)
         assertTrue(d.active)
         assertTrue(d.log.contains("wake gate: asleep"))
         val open = eval(WakeGate.State(awake = true), w(10), 5 * 60)
-        val e = StepsActivityRules.decide(w(10), 100.0, 60.0, false, false, null, open)
+        val e = StepsActivityRules.decide(w(10), 100.0, 60.0, false, null, null, open)
         assertFalse(e.wakeGateClosed)
         assertTrue(e.log.contains("wake gate: awake"))
     }

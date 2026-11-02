@@ -6,8 +6,10 @@ package app.aaps.plugins.aps.openAPSAutoISF.steps
  * [NONE] is "no steps rule active": the run is the same as upstream AutoISF.
  */
 data class StepsActivity(
-    /** True: no SMB this run and no temp basal above the profile basal. */
+    /** True: no SMB this run (sport guard: movement, the hold after it, or low glucose in the taper). */
     val sportGuard: Boolean = false,
+    /** Temp basal may not be above this share of the profile basal; 0.0 = zero temp, 1.0 = no limit. */
+    val basalFactor: Double = 1.0,
     /** Lowest allowed minutes between two SMBs; 0 = keep the SMB interval of the settings. */
     val smbIntervalFloorMinutes: Int = 0,
     /** SMB size multiplier from the effort belief, 0.45..1.0; 1.0 = no reduction. */
@@ -18,7 +20,7 @@ data class StepsActivity(
     val log: String = "",
 ) {
 
-    val active: Boolean get() = sportGuard || smbIntervalFloorMinutes > 0 || effortSmbFactor < 1.0 || wakeGateClosed
+    val active: Boolean get() = sportGuard || basalFactor < 1.0 || smbIntervalFloorMinutes > 0 || effortSmbFactor < 1.0 || wakeGateClosed
 
     companion object {
 
@@ -38,20 +40,11 @@ data class StepsActivity(
  */
 object StepsActivityRules {
 
-    /** Steps in 5 minutes that start the sport guard together with [BURST_STEPS_10]. */
+    /** Steps in 5 minutes that start the sport guard together with [BURST_STEPS_10]. See [ActivityAfterglow]. */
     const val BURST_STEPS_5 = 400
 
     /** Steps in 10 minutes that start the sport guard together with [BURST_STEPS_5]. */
     const val BURST_STEPS_10 = 800
-
-    /** Steps in 30 minutes that count as sustained activity. A 20 minute walk is about 2000 steps. */
-    const val SUSTAINED_STEPS_30 = 1200
-
-    /** Steps in 60 minutes that count as sustained activity. */
-    const val SUSTAINED_STEPS_60 = 3000
-
-    /** Steps in 180 minutes that count as sustained activity. */
-    const val SUSTAINED_STEPS_180 = 4500
 
     /** Steps in 180 minutes above which SMBs are spaced to at least [INTERVAL_AFTER_ACTIVITY_MIN]. */
     const val INTERVAL_STEPS_180 = 1500
@@ -72,20 +65,6 @@ object StepsActivityRules {
     const val INTERVAL_WHILE_MOVING_MIN = 15
 
     /**
-     * The sport guard: a burst of steps, or sustained activity, stops SMBs.
-     *
-     * Zero steps in the last 5 minutes release the guard at once, so the loop can resume SMBs right
-     * after a walk, for example when a meal is rising.
-     */
-    fun sportGuard(w: StepWindows?): Boolean {
-        if (w == null) return false
-        if (w.steps5 == 0) return false
-        val burst = w.steps5 >= BURST_STEPS_5 && w.steps10 >= BURST_STEPS_10
-        val sustained = w.steps30 >= SUSTAINED_STEPS_30 || w.steps60 >= SUSTAINED_STEPS_60 || w.steps180 >= SUSTAINED_STEPS_180
-        return burst || sustained
-    }
-
-    /**
      * Lowest minutes between two SMBs after activity, 0 when no rule fires.
      *
      * @param bg glucose in mg/dl
@@ -104,6 +83,7 @@ object StepsActivityRules {
     /**
      * Puts the three rules together for one run. Each rule has its own switch.
      *
+     * @param afterglow the sport guard of this run (movement, hold, taper), or null when that switch is off
      * @param effort the effort belief of this run, or null when that switch is off
      * @param wakeGate the morning wake gate of this run, or null when that switch is off
      */
@@ -111,24 +91,28 @@ object StepsActivityRules {
         w: StepWindows?,
         bg: Double,
         lastSmbAgeMinutes: Double,
-        sportGuardEnabled: Boolean,
         smbIntervalEnabled: Boolean,
+        afterglow: ActivityAfterglow.Result?,
         effort: EffortActivityBelief.Assessment?,
         wakeGate: WakeGate.Result? = null,
     ): StepsActivity {
         if (w == null) return StepsActivity.NONE
-        val guard = sportGuardEnabled && sportGuard(w)
+        val guard = afterglow?.smbBlocked == true
+        val glowSmbFactor = afterglow?.smbFactor ?: 1.0
+        val basalFactor = afterglow?.basalFactor ?: 1.0
         val floor = if (smbIntervalEnabled) smbIntervalFloorMinutes(w, bg, lastSmbAgeMinutes) else 0
-        val factor = effort?.smbFactor ?: 1.0
+        // The stricter of the two, never the product: both ask for the same thing.
+        val factor = minOf(effort?.smbFactor ?: 1.0, glowSmbFactor)
         val gateClosed = wakeGate?.blockSmb == true
         val parts = mutableListOf<String>()
         parts.add("steps 5m=${w.steps5} 10m=${w.steps10} 30m=${w.steps30} 60m=${w.steps60} 180m=${w.steps180}")
-        if (guard) parts.add("sport guard: SMB 0")
+        if (afterglow != null && afterglow.active) parts.add(afterglow.log)
         if (floor > 0) parts.add("SMB interval at least ${floor}m")
-        if (effort != null && factor < 1.0) parts.add("effort x${formatFactor(factor)} (${effort.reasons.joinToString(" ")})")
+        if (effort != null && effort.smbFactor < 1.0) parts.add("effort x${formatFactor(effort.smbFactor)} (${effort.reasons.joinToString(" ")})")
         if (wakeGate != null && wakeGate.inWindow) parts.add(if (gateClosed) "wake gate: asleep, SMB 0" else "wake gate: awake")
         return StepsActivity(
             sportGuard = guard,
+            basalFactor = basalFactor,
             smbIntervalFloorMinutes = floor,
             effortSmbFactor = factor,
             wakeGateClosed = gateClosed,

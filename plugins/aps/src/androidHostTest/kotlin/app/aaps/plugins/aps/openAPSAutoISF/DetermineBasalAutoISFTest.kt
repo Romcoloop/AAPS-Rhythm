@@ -246,14 +246,59 @@ class DetermineBasalAutoISFTest : TestBaseWithProfile() {
     }
 
     @Test
-    fun `the sport guard gives no SMB and no temp above the profile basal`() {
+    fun `the sport guard gives no SMB`() {
         val plain = runWithSmb()
         assertThat(plain.units).isGreaterThan(0.0)
 
         val guarded = runWithSmb(steps = StepsActivity(sportGuard = true))
         assertThat(guarded.units).isNull()
         assertThat(guarded.reason.toString()).contains("sport guard: no SMB")
-        assertThat(guarded.rate).isAtMost(1.0)
+    }
+
+    @Test
+    fun `a basal factor of 0 gives a zero temp even when the loop wants a high temp`() {
+        val plain = runWithSmb(steps = StepsActivity(wakeGateClosed = true))
+        assertThat(plain.rate).isGreaterThan(1.0)
+
+        val limited = runWithSmb(steps = StepsActivity(wakeGateClosed = true, basalFactor = 0.0))
+        assertThat(limited.rate).isEqualTo(0.0)
+        assertThat(limited.duration).isEqualTo(30)
+        assertThat(limited.reason.toString()).contains("sport guard: temp basal")
+    }
+
+    @Test
+    fun `a basal factor of 0_5 caps the temp at half of the profile basal`() {
+        val limited = runWithSmb(steps = StepsActivity(wakeGateClosed = true, basalFactor = 0.5))
+        assertThat(limited.rate).isEqualTo(0.5)
+        assertThat(limited.duration).isEqualTo(30)
+    }
+
+    @Test
+    fun `the basal limit keeps a lower temp, cuts a high one and ignores runs that gave up`() {
+        fun rt(rate: Double?, duration: Int?, eventualBG: Double? = 100.0) =
+            RT(runningDynamicIsf = false, eventualBG = eventualBG, rate = rate, duration = duration)
+
+        val noTemp = CurrentTemp(0, 0.0, null)
+        // a lower temp stays
+        val low = sut.limitBasalBySteps(rt(0.3, 30), 0.5, profile(), noTemp)
+        assertThat(low.rate).isEqualTo(0.3)
+        // a cancel of the temp would give the profile basal (1.0), so it becomes a zero temp
+        val cancel = sut.limitBasalBySteps(rt(0.0, 0), 0.0, profile(), CurrentTemp(20, 2.0, null))
+        assertThat(cancel.rate).isEqualTo(0.0)
+        assertThat(cancel.duration).isEqualTo(30)
+        // no new temp, but a high temp is running: it is replaced
+        val running = sut.limitBasalBySteps(rt(null, null), 0.5, profile(), CurrentTemp(20, 2.0, null))
+        assertThat(running.rate).isEqualTo(0.5)
+        assertThat(running.duration).isEqualTo(30)
+        // no new temp and nothing running: the profile basal is above the limit
+        val none = sut.limitBasalBySteps(rt(null, null), 0.5, profile(), noTemp)
+        assertThat(none.rate).isEqualTo(0.5)
+        // a run without eventualBG gave up (bad glucose data): never suspend there
+        val gaveUp = sut.limitBasalBySteps(rt(null, null, eventualBG = null), 0.0, profile(), CurrentTemp(20, 2.0, null))
+        assertThat(gaveUp.rate).isNull()
+        // factor 1.0 = no limit
+        val free = sut.limitBasalBySteps(rt(2.0, 30), 1.0, profile(), noTemp)
+        assertThat(free.rate).isEqualTo(2.0)
     }
 
     @Test

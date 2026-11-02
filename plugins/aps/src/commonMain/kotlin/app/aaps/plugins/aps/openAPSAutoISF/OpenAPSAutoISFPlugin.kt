@@ -411,7 +411,7 @@ open class OpenAPSAutoISFPlugin(
         val flatBGsDetected = bgQualityCheck.state == BgQualityCheck.State.FLAT
         val smbRatio = determine_varSMBratio(glucoseStatus.glucose.toInt(), target_bg, loopWantedSmb)
         // Step rules (sport guard, SMB spacing, effort protection); NONE when every switch is off.
-        val stepsActivity = steps.decide(now, glucoseStatus.glucose, iobData.lastBolusTime)
+        val stepsActivity = steps.decide(now, glucoseStatus.glucose, glucoseStatus.delta, iobData.lastBolusTime)
         if (autoIsfMode && stepsActivity.log.isNotEmpty()) consoleError.add("steps: ${stepsActivity.log}")
 
         aapsLogger.debug(LTag.APS, ">>> Invoking determine_basal AutoISF <<<")

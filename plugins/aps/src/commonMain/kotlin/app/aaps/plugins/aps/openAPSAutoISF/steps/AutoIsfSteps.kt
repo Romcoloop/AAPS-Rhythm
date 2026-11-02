@@ -16,8 +16,8 @@ import app.aaps.core.keys.interfaces.Preferences
  *   after the switch and stores the counted steps, in the same six-row form the watch uses, so the
  *   automation trigger "Steps count" and the graph see them too.
  * - [decide] is called once per loop run. It reads the newest steps (phone first, then the database,
- *   so a watch works as well), runs the effort belief and the morning wake gate and puts the rules
- *   together.
+ *   so a watch works as well), runs the sport guard ([ActivityAfterglow]), the effort belief and the
+ *   morning wake gate and puts the rules together.
  *
  * Every rule has its own switch and all are off by default. Off = the run is the same as upstream.
  */
@@ -31,6 +31,7 @@ class AutoIsfSteps(
 ) {
 
     private var effortMemory = EffortActivityBelief.Memory()
+    private var afterglowMemory = ActivityAfterglow.Memory()
     private var wakeState = WakeGate.State()
     private var lastStoredMinute = 0L
 
@@ -91,15 +92,17 @@ class AutoIsfSteps(
      * The step rules for one run.
      *
      * @param bg glucose in mg/dl
+     * @param delta glucose change in mg/dl per 5 minutes
      * @param lastBolusTimeMs time of the last bolus or SMB, 0 when there was none
      */
-    suspend fun decide(nowMs: Long, bg: Double, lastBolusTimeMs: Long): StepsActivity {
+    suspend fun decide(nowMs: Long, bg: Double, delta: Double, lastBolusTimeMs: Long): StepsActivity {
         val sportGuard = preferences.get(BooleanKey.ApsAutoIsfStepsSportGuard)
         val smbInterval = preferences.get(BooleanKey.ApsAutoIsfStepsSmbInterval)
         val effortOn = preferences.get(BooleanKey.ApsAutoIsfStepsEffortProtection)
         val wakeGateOn = preferences.get(BooleanKey.ApsAutoIsfStepsWakeGate)
         if (!sportGuard && !smbInterval && !effortOn && !wakeGateOn) {
             lastEffort = null
+            afterglowMemory = ActivityAfterglow.Memory()
             return StepsActivity.NONE
         }
         val w = windows(nowMs)
@@ -131,8 +134,16 @@ class AutoIsfSteps(
             null
         }
         lastEffort = effort
+        val afterglow = if (sportGuard) {
+            val (result, memory) = ActivityAfterglow.assess(w, bg, delta, nowMs, afterglowMemory)
+            afterglowMemory = memory
+            result
+        } else {
+            afterglowMemory = ActivityAfterglow.Memory()
+            null
+        }
         val lastSmbAgeMinutes = if (lastBolusTimeMs > 0L) (nowMs - lastBolusTimeMs) / 60_000.0 else Double.MAX_VALUE
-        return StepsActivityRules.decide(w, bg, lastSmbAgeMinutes, sportGuard, smbInterval, effort, wakeGate)
+        return StepsActivityRules.decide(w, bg, lastSmbAgeMinutes, smbInterval, afterglow, effort, wakeGate)
     }
 
     companion object {

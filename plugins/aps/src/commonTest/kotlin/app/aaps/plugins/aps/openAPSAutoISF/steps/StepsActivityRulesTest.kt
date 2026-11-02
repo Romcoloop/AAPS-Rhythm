@@ -12,29 +12,8 @@ class StepsActivityRulesTest {
 
     @Test
     fun `no data fires no rule`() {
-        assertFalse(StepsActivityRules.sportGuard(null))
         assertEquals(0, StepsActivityRules.smbIntervalFloorMinutes(null, 100.0, 60.0))
-        assertEquals(StepsActivity.NONE, StepsActivityRules.decide(null, 100.0, 60.0, true, true, null))
-    }
-
-    @Test
-    fun `a burst of steps starts the sport guard`() {
-        assertTrue(StepsActivityRules.sportGuard(w(s5 = 400, s10 = 800)))
-        assertFalse(StepsActivityRules.sportGuard(w(s5 = 400, s10 = 700)))
-        assertFalse(StepsActivityRules.sportGuard(w(s5 = 300, s10 = 800)))
-    }
-
-    @Test
-    fun `sustained activity starts the sport guard`() {
-        assertTrue(StepsActivityRules.sportGuard(w(s5 = 1, s30 = 1200)))
-        assertTrue(StepsActivityRules.sportGuard(w(s5 = 1, s60 = 3000)))
-        assertTrue(StepsActivityRules.sportGuard(w(s5 = 1, s180 = 4500)))
-        assertFalse(StepsActivityRules.sportGuard(w(s5 = 1, s30 = 1199, s60 = 2999, s180 = 4499)))
-    }
-
-    @Test
-    fun `zero steps in the last 5 minutes release the sport guard at once`() {
-        assertFalse(StepsActivityRules.sportGuard(w(s5 = 0, s30 = 2000, s60 = 4000, s180 = 9000)))
+        assertEquals(StepsActivity.NONE, StepsActivityRules.decide(null, 100.0, 60.0, true, null, null))
     }
 
     @Test
@@ -56,29 +35,42 @@ class StepsActivityRulesTest {
     @Test
     fun `decide respects every switch`() {
         val walk = w(s5 = 400, s10 = 800, s30 = 1200, s60 = 1500, s180 = 2000)
-        val off = StepsActivityRules.decide(walk, 100.0, 60.0, sportGuardEnabled = false, smbIntervalEnabled = false, effort = null)
+        val off = StepsActivityRules.decide(walk, 100.0, 60.0, smbIntervalEnabled = false, afterglow = null, effort = null)
         assertFalse(off.active)
         assertFalse(off.sportGuard)
         assertEquals(0, off.smbIntervalFloorMinutes)
         assertEquals(1.0, off.effortSmbFactor)
         assertTrue(off.log.startsWith("steps 5m=400"))
 
-        val on = StepsActivityRules.decide(walk, 100.0, 60.0, sportGuardEnabled = true, smbIntervalEnabled = true, effort = null)
+        val glow = ActivityAfterglow.Result(ActivityAfterglow.Level.GUARD, ActivityAfterglow.Phase.MOVING, 0.0, true, 0.0, "afterglow GUARD: moving")
+        val on = StepsActivityRules.decide(walk, 100.0, 60.0, smbIntervalEnabled = true, afterglow = glow, effort = null)
         assertTrue(on.sportGuard)
+        assertEquals(0.0, on.basalFactor)
+        assertEquals(0.0, on.effortSmbFactor)
         // still moving (400/5 min, 1200/30 min, last SMB 60 min ago) wins over the 10 minutes after activity
         assertEquals(15, on.smbIntervalFloorMinutes)
         assertTrue(on.active)
-        assertTrue(on.log.contains("sport guard"))
+        assertTrue(on.log.contains("afterglow GUARD"))
         assertTrue(on.log.contains("at least 15m"))
     }
 
     @Test
     fun `the effort factor of the belief is passed on`() {
         val (assessment, _) = EffortActivityBelief.assess(w(s5 = 250, s15 = 600, s60 = 600), nowMs = 0L, prior = EffortActivityBelief.Memory())
-        val d = StepsActivityRules.decide(w(s5 = 250, s15 = 600, s60 = 600), 100.0, 60.0, false, false, assessment)
+        val d = StepsActivityRules.decide(w(s5 = 250, s15 = 600, s60 = 600), 100.0, 60.0, false, null, assessment)
         assertEquals(assessment.smbFactor, d.effortSmbFactor)
         assertTrue(d.active)
         assertTrue(d.log.contains("effort x"))
+    }
+
+    @Test
+    fun `the stricter of the effort factor and the afterglow factor is used`() {
+        val (assessment, _) = EffortActivityBelief.assess(w(s5 = 250, s15 = 600, s60 = 600), nowMs = 0L, prior = EffortActivityBelief.Memory())
+        val glow = ActivityAfterglow.Result(ActivityAfterglow.Level.GUARD, ActivityAfterglow.Phase.TAPER, 0.3, false, 0.3, "afterglow GUARD: taper")
+        val d = StepsActivityRules.decide(w(s5 = 250, s15 = 600, s60 = 600), 100.0, 60.0, false, glow, assessment)
+        assertEquals(minOf(assessment.smbFactor, 0.3), d.effortSmbFactor)
+        assertEquals(0.3, d.basalFactor)
+        assertFalse(d.sportGuard)
     }
 
     @Test

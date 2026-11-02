@@ -231,7 +231,7 @@ enum class BooleanKey(
         defaultedBySM = true,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
-    /** A burst of steps or sustained activity stops SMBs and keeps the temp basal at or under the profile basal. */
+    /** Movement stops the temp basal and the SMBs. After it, both come back to 100 % in a slow ramp. */
     ApsAutoIsfStepsSportGuard(
         "autoISF_steps_sport_guard",
         false,
