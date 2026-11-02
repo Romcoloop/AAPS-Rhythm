@@ -43,6 +43,8 @@ jobs:
     timeout-minutes: 120
     env:
       BUILD_VARIANT: ${{ github.event.inputs.buildVariant }}
+      # A step condition cannot read secrets, so the job env keeps a flag for the Google Drive step.
+      HAS_RCLONE_TOKEN: ${{ secrets.RCLONE_GDRIVE_TOKEN != '' }}
     steps:
       - name: Check secrets
         env:
@@ -172,7 +174,7 @@ jobs:
       # Without the secret the step is skipped; a Drive error does not fail the run, the APK is
       # still on the run page.
       - name: Copy APK to Google Drive
-        if: ${{ secrets.RCLONE_GDRIVE_TOKEN != '' }}
+        if: ${{ env.HAS_RCLONE_TOKEN == 'true' }}
         continue-on-error: true
         env:
           RCLONE_GDRIVE_TOKEN: ${{ secrets.RCLONE_GDRIVE_TOKEN }}
