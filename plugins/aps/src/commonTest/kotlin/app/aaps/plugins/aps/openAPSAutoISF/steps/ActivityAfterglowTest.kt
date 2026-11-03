@@ -47,6 +47,13 @@ class ActivityAfterglowTest {
     }
 
     @Test
+    fun `a few steps at home do not start a new hold when the sums are still high`() {
+        val (r, m) = ActivityAfterglow.assess(w(s5 = 120, s10 = 130, s15 = 120, s30 = 2500, s60 = 6200, s180 = 7000), 120.0, 0.0, t0, ActivityAfterglow.Memory())
+        assertEquals(Phase.NONE, r.phase)
+        assertEquals(Level.NONE, m.level)
+    }
+
+    @Test
     fun `while walking at guard level there is no SMB and no basal`() {
         val (r, _) = ActivityAfterglow.assess(walk(40), 120.0, 0.0, t0, ActivityAfterglow.Memory())
         assertEquals(Level.GUARD, r.level)
@@ -57,7 +64,7 @@ class ActivityAfterglowTest {
 
     @Test
     fun `while walking at mild level the SMB is x0_8 and the basal is 0`() {
-        val (r, _) = ActivityAfterglow.assess(w(s5 = 500, s60 = 2600), 120.0, 0.0, t0, ActivityAfterglow.Memory())
+        val (r, _) = ActivityAfterglow.assess(w(s5 = 500, s10 = 600, s15 = 600, s60 = 2600), 120.0, 0.0, t0, ActivityAfterglow.Memory())
         assertEquals(Level.MILD, r.level)
         assertEquals(Phase.MOVING, r.phase)
         assertFalse(r.smbBlocked)
@@ -98,7 +105,7 @@ class ActivityAfterglowTest {
     @Test
     fun `a mild walk has no hold`() {
         var m = ActivityAfterglow.Memory()
-        m = ActivityAfterglow.assess(w(s5 = 500, s60 = 2600), 120.0, 0.0, t0, m).second
+        m = ActivityAfterglow.assess(w(s5 = 500, s10 = 600, s15 = 600, s60 = 2600), 120.0, 0.0, t0, m).second
         val (r, _) = ActivityAfterglow.assess(still(s30 = 1500, s60 = 2600, s180 = 2600), 120.0, 0.0, t0 + minute, m)
         assertEquals(Phase.TAPER, r.phase)
         assertEquals(0.8, r.smbFactor, 0.05)

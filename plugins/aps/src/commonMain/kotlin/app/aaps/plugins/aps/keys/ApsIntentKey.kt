@@ -37,6 +37,15 @@ enum class ApsIntentKey(
         confirmationMessage = ApsStrings.autoisf_slots_copy_global_confirm
     ),
 
+    /** Copies the global AutoISF and SMB delivery values into the night slot only. The click handler is attached at runtime. */
+    AutoIsfSlotsCopyGlobalToNight(
+        key = "autoisf_slots_copy_global_to_night",
+        title = ApsStrings.autoisf_slots_copy_global_to_night,
+        summary = ApsStrings.autoisf_slots_copy_global_to_night_summary,
+        preferenceType = PreferenceType.CLICK,
+        confirmationMessage = ApsStrings.autoisf_slots_copy_global_to_night_confirm
+    ),
+
     /** Copies the weekday meal slot values into the weekend meal slots. The click handler is attached at runtime. */
     AutoIsfSlotsCopyWeekdayToWeekend(
         key = "autoisf_slots_copy_weekday_to_weekend",

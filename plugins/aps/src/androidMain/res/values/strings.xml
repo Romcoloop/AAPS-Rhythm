@@ -131,6 +131,9 @@
     <string name="autoisf_slots_copy_global">Copy global values to all slots</string>
     <string name="autoisf_slots_copy_global_summary">Writes the global AutoISF and SMB delivery values into every slot: weekday meals, weekend meals and night. Use it once to start, then change only what should differ. The slot times are not changed.</string>
     <string name="autoisf_slots_copy_global_confirm">Values already set in all slots will be overwritten by the global values. Continue?</string>
+    <string name="autoisf_slots_copy_global_to_night">Copy global values to the night slot</string>
+    <string name="autoisf_slots_copy_global_to_night_summary">Writes the global AutoISF and SMB delivery values into the night slot only. The meal slots and the night time are not changed. Use it as a start, then make the night milder by hand.</string>
+    <string name="autoisf_slots_copy_global_to_night_confirm">Values already set in the night slot will be overwritten by the global values. Continue?</string>
     <string name="autoisf_slots_copy_weekday_to_weekend">Copy weekday slots to weekend</string>
     <string name="autoisf_slots_copy_weekday_to_weekend_summary">Writes the values of the weekday breakfast, lunch and dinner slots into the weekend slots. A good start before the weekend slots are tuned. The weekend meal times are not changed.</string>
     <string name="autoisf_slots_copy_weekday_to_weekend_confirm">Values already set in the three weekend slots will be overwritten by the weekday slot values. Continue?</string>
@@ -177,6 +180,7 @@
     <string name="autoisf_log_meal_low_time" comment="%1$s=the low limit with unit. Example: Time under 3.9 mmol/l">Time under %1$s</string>
     <string name="autoisf_log_meal_temp_target">A temp target was active in this meal, so no suggestion is made.</string>
     <string name="autoisf_log_meal_incomplete">The log does not cover all of this meal, so no suggestion is made.</string>
+    <string name="autoisf_log_meal_global">No run of this meal names a slot: the loop used the global values then (the meal slots were off). A suggestion for the slot would change something that took no part, so there is none.</string>
     <string name="autoisf_log_slots_off">This slot is off (meal slot settings or separate weekend slots), so the loop does not use its values. Switch them on in the AutoISF settings to get suggestions for this slot.</string>
     <string name="autoisf_log_changed_meanwhile">This setting was changed after the analysis. Nothing was saved. Run the analysis again.</string>
 

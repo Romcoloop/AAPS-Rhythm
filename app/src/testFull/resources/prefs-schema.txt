@@ -98,7 +98,6 @@ autoISF_meal_window_lunch_we|StringKey|true
 autoISF_meal_window_lunch|StringKey|true
 autoISF_meal_window_night|StringKey|true
 autoISF_min|DoubleKey|true
-autoISF_outside_meal_factor|DoubleKey|true
 autoISF_slot_breakfast_autoISF_max|DoubleKey|true
 autoISF_slot_breakfast_autoISF_min|DoubleKey|true
 autoISF_slot_breakfast_bgAccel_ISF_weight|DoubleKey|true
@@ -214,6 +213,7 @@ autoISF_steps_wake_gate|BooleanKey|true
 autoISF_steps_wake_start_hour|IntKey|true
 autoISF_steps_wake_steps|IntKey|true
 autoISF_weekend_slots_enabled|BooleanKey|true
+autoisf_slots_copy_global_to_night|ApsIntentKey|false
 autoisf_slots_copy_global|ApsIntentKey|false
 autoisf_slots_copy_weekday_to_weekend|ApsIntentKey|false
 autosens_adjust_targets|BooleanKey|true

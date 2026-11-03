@@ -13,6 +13,8 @@ data class AutoIsfMealEpisode(
     val start: Long,
     /** Last run inside the meal time plus tail. */
     val end: Long,
+    /** When the meal time plus tail is over by the clock, also when the log has a gap. */
+    val plannedEnd: Long,
     /**
      * Where the meal is taken to begin: the first run with carbs on board, else the first run
      * where BG started to rise, else [start].
@@ -110,9 +112,12 @@ class AutoIsfMealAnalyzer(
         val dominant = withDriver.groupingBy { it }.eachCount().maxByOrNull { it.value }?.key ?: AutoIsfDriver.None
         val smbs = runs.count { it.smbUnits > 0.0 }
         fun pct(n: Int, of: Int) = if (of == 0) 0.0 else 100.0 * n / of
+        // The meal time of this day began this many minutes before the first run.
+        val plannedStart = runs.first().timestamp - runsFromStart.first().first * MINUTE_MILLIS
         return AutoIsfMealEpisode(
             start = runs.first().timestamp,
             end = runs.last().timestamp,
+            plannedEnd = plannedStart + length * MINUTE_MILLIS,
             mealStart = mealStartRun.timestamp,
             targetBg = target,
             bgAtMealStart = mealStartRun.bg,

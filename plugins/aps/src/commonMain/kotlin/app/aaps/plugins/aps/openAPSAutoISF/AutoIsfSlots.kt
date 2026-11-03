@@ -252,9 +252,6 @@ class AutoIsfSlots(
         return runSlot
     }
 
-    /** Minutes since midnight as fixed by [beginRun], or the clock now when no run was started. */
-    val minuteOfRun: Int get() = if (runStarted) runMinute else minuteOf(now())
-
     /** Kind of day as fixed by [beginRun], or from the clock now when no run was started. */
     val dayOfRun: DayKind get() = if (runStarted) runDay else dayKind(now())
 
@@ -268,15 +265,6 @@ class AutoIsfSlots(
 
     /** The window text of a slot, for the log. */
     fun windowText(slot: Slot): String = preferences.get(slot.windowKey)
-
-    /**
-     * The meal times of the current kind of day, for the "meal factors outside meal times" scale.
-     * Weekday times while the slots or the weekend slots are off, so the switch off changes nothing.
-     */
-    fun mealWindowTexts(): List<String> {
-        val wanted = if (dayOfRun == DayKind.WEEKDAY) DayType.WEEKDAY else DayType.WEEKEND
-        return Slot.entries.filter { it.dayType == wanted }.map { preferences.get(it.windowKey) }
-    }
 
     /** Value of [key] for now: the slot copy inside a window, the global value otherwise. */
     fun get(key: DoubleKey): Double {
@@ -344,6 +332,13 @@ class AutoIsfSlots(
             slot.doubles.forEach { (global, slotKey) -> preferences.put(slotKey, preferences.get(global)) }
             slot.ints.forEach { (global, slotKey) -> preferences.put(slotKey, preferences.get(global)) }
         }
+    }
+
+    /** Writes the global values into the night slot only. The meal slots and the windows are not touched. */
+    fun copyGlobalToNightSlot() {
+        val night = Slot.NIGHT
+        night.doubles.forEach { (global, slotKey) -> preferences.put(slotKey, preferences.get(global)) }
+        night.ints.forEach { (global, slotKey) -> preferences.put(slotKey, preferences.get(global)) }
     }
 
     /** Writes the values of the weekday meal slots into the weekend meal slots. Windows are not touched. */

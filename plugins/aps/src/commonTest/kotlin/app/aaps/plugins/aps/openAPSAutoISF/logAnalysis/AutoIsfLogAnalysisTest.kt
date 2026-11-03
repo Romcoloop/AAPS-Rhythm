@@ -2,7 +2,6 @@ package app.aaps.plugins.aps.openAPSAutoISF.logAnalysis
 
 import app.aaps.plugins.aps.openAPSAutoISF.AutoIsfSlots.Slot
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 

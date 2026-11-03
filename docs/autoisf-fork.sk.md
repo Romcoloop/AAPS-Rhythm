@@ -6,7 +6,7 @@ miestach. Všetko ostatné je upstream AndroidAPS.
 | Čo | Kde v appke | Vypnuté znamená |
 |---|---|---|
 | 1. Blended BG pre bg_ISF | AutoISF settings → Blended BG ISF weight | váha 0,0 = ako upstream |
-| 2. Časy jedál a „faktory mimo jedla“ | AutoISF settings | žiadny čas jedla = ako upstream |
+| 2. Časy jedál (okná slotov jedál) | AutoISF settings | žiadny čas jedla = ako upstream |
 | 3. Sloty: vlastné hodnoty pre jedlo, víkend a noc | Meal slot settings + sekcie slotov | prepínač vypnutý = ako upstream |
 | 4. AutoISF log analysis (ladiaca karta) | karta na obrazovke pluginu AutoISF | len číta; zapisuje po „Použiť“ |
 | 5. Kroky a aktivita (vetva `autoisf-steps`) | AutoISF settings → Steps and activity | všetkých 5 prepínačov vypnutých = ako upstream |
@@ -44,15 +44,16 @@ Pravidlá v kóde (`BlendedBg.kt`):
 
 V logu sú riadky `bgBlend`. Opatrný štart je váha 0,1–0,2.
 
-## 2. Časy jedál a faktor mimo jedla
+## 2. Časy jedál
 
-Tri okná v AutoISF settings: Breakfast / Lunch / Dinner time, zapísané ako `HH:MM-HH:MM`. Vo vnútri
-okna pracujú faktory jedla (`bgBlend`, `pp_ISF` a `acce_ISF` nad cieľom) s plnou váhou. Mimo všetkých
-okien sa násobia hodnotou **Meal factors outside meal times** (1,0 = bez zmeny, 0,5 = polovica,
-0,0 = vypnuté). Brzdenie pri klesaní BG sa nikdy neznižuje. Bez nastaveného okna sa nič nemení.
+Tri okná v AutoISF settings: Breakfast / Lunch / Dinner time, zapísané ako `HH:MM-HH:MM`. Sú to okná
+pracovných slotov jedál (kapitola 3). V sobotu, nedeľu a v režime sviatok/dovolenka sa namiesto nich
+použijú víkendové časy jedál, ak sú zapnuté víkendové sloty.
 
-Tie isté okná sú oknami pracovných slotov jedál (kapitola 3). V sobotu, nedeľu a v režime
-sviatok/dovolenka sa namiesto nich použijú víkendové časy jedál, ak sú zapnuté víkendové sloty.
+Samostatný faktor pre čas mimo jedál už neexistuje (bývalý *Meal factors outside meal times*). Mimo
+všetkých okien slotov platia **globálne hodnoty** a pre noc je **nočný slot** s vlastnými 15 hodnotami.
+Ak chceš, aby bol čas medzi jedlami miernejší, uprav globálne hodnoty. Pri vypnutých slotoch okná
+nerobia nič a loop funguje ako upstream.
 
 ## 3. Sloty
 
@@ -96,6 +97,9 @@ Všetko v nastaveniach pluginu OpenAPS AutoISF.
 - Breakfast / Lunch / Dinner time (weekend) – vidno, kým sú víkendové sloty zapnuté
 - Holiday or vacation a „Holiday or vacation ends on“ (`RRRR-MM-DD`). S dátumom sa prepínač sám vypne
   deň po tom dátume. Bez dátumu ho vypínaš ručne.
+- **Copy global values to the night slot** – zapíše globálne hodnoty len do **nočného slotu**. Sloty
+  jedál a čas noci sa nemenia. Dobrý začiatok pre noc: skopíruj, potom hodnoty ručne zmiernite
+  (kapitola 5).
 - **Copy global values to all slots** – zapíše globálne hodnoty do **všetkých siedmich** slotov.
   Hodnoty, ktoré už v slotoch boli, sa stratia. Dobré raz, úplne na začiatku.
 - **Copy weekday slots to weekend** – zapíše hodnoty pracovných raňajok / obeda / večere do
@@ -111,8 +115,8 @@ takmer bez AutoISF. Preto slot najprv **naplň** a až potom mu daj okno.
 
 1. Use meal slot settings → zapnúť.
 2. Ak sú pracovné sloty ešte rovné globálnym hodnotám: **Copy global values to all slots**.
-   Ak si pracovné sloty už ladil: **nestláčaj** ho. Použi **Copy weekday slots to weekend** a nočný
-   slot naplň ručne (hodnoty sú v kapitole 5).
+   Ak si pracovné sloty už ladil: **nestláčaj** ho. Použi **Copy weekday slots to weekend** a pre noc
+   **Copy global values to the night slot** (potom noc zmiernite, hodnoty sú v kapitole 5).
 3. Nastav pracovné časy jedál (AutoISF settings), ak ešte nie sú.
 4. Separate weekend slots → zapnúť, nastaviť víkendové časy, napríklad `07:00-10:00`, `12:00-15:00`,
    `18:00-21:00`.
@@ -146,6 +150,10 @@ Jedno tlačidlo: **Analyze last meal**. Nie je tu výber dňa, obdobia ani slotu
 - **Posledné jedlo** je posledný slot jedla (raňajky, obed alebo večera, pracovný deň alebo víkend),
   ktorému skončil čas jedla plus 3 hodiny. Číta sa log z posledných 3 dní. Jedlo, ktoré ešte trvá,
   sa preskočí. Nočný slot nie je jedlo a neanalyzuje sa.
+- Dozvuk jedla končí začiatkom ďalšieho okna jedla rovnakého typu dňa, takže vzostup po obede sa
+  nepočíta k raňajkám.
+- Jedlo, ktorého behy nemenujú žiadny slot, bežalo na globálnych hodnotách (sloty boli vypnuté).
+  Zobrazí sa, ale **nedostane návrh**.
 - Jedlo sa počíta do slotu, len keď ho riadky logu z toho dňa menujú – obedové okno v sobotu sa
   teda nepomieša do pracovného obeda.
 - Skončené znamená: čas jedla končí o 14:00, dozvuk o 17:00, analyzovať môžeš po 17:00.
@@ -241,7 +249,7 @@ maxSMBBasalMinutes 30, UAM 30, cieľ 6,2 mmol/l, ISF 2,27 mmol/l/U, CR 12 g/U.
 |---|---|
 | Raňajky, Obed, Večera (pracovný deň) | hodnoty, ktoré si naladil; ostávajú ako sú |
 | … (víkend) | Copy weekday slots to weekend |
-| Noc | globálne hodnoty, ale miernejšie: `autoISF_max` 1,4, `bgAccel_ISF_weight` 0,15, `smb_delivery_ratio` 0,4 / min 0,5 / max 0,7, `smb_max_range_extension` 3. Spíš, takže loop má mať menej priestoru, nie viac. |
+| Noc | Copy global values to the night slot, potom miernejšie: `autoISF_max` 1,4, `bgAccel_ISF_weight` 0,15, `smb_delivery_ratio` 0,4 / min 0,5 / max 0,7, `smb_max_range_extension` 3. Spíš, takže loop má mať menej priestoru, nie viac. |
 
 ## 6. Čo je v pláne
 
@@ -258,8 +266,7 @@ maxSMBBasalMinutes 30, UAM 30, cieľ 6,2 mmol/l, ISF 2,27 mmol/l/U, CR 12 g/U.
 
 ## 7. Pre vývojárov
 
-- `plugins/aps/.../openAPSAutoISF/BlendedBg.kt` – kapitola 1. `MealWindows.kt` – okná, „cez polnoc“,
-  faktor mimo jedla.
+- `plugins/aps/.../openAPSAutoISF/BlendedBg.kt` – kapitola 1. `MealWindows.kt` – okná, „cez polnoc“.
 - `AutoIsfSlots.kt` – sloty, výber, režim sviatok/dovolenka a kopírovacie tlačidlá. `AutoIsfSlotsTest`
   pokrýva pravidlá výberu.
 - Kľúče: `autoISF_slot_<slot>_<hodnota>` v `DoubleKey` / `IntKey`, okná `autoISF_meal_window_*` v
@@ -324,9 +331,10 @@ Dobré vedieť:
 - **Ako sa vyberie úroveň:** úroveň sa určí v čase pohybu a drží sa v pamäti. Po prechádzke ostanú
   60- a 180-minútové sumy vysoké celé hodiny, preto sa na návrat nepoužívajú. Nová úroveň počas
   jedného návratu môže byť len vyššia.
-- **Pohyb alebo nie:** „hýbeš sa teraz“ vyžaduje aspoň 100 krokov za posledných 5 minút. Chôdza, ktorá
-  pokračuje alebo sa obnoví počas návratu, musí navyše ukázať 25 krokov/min za 15 minút. Pár krokov
-  doma (kuchyňa, WC) pridržanie znova nespustí.
+- **Pohyb alebo nie:** „hýbeš sa teraz“ vyžaduje aspoň 100 krokov za posledných 5 minút **a** reálne
+  tempo 25 krokov/min za 15 minút. Platí to rovnako pri novom štarte aj pri chôdzi, ktorá pokračuje
+  alebo sa obnoví počas návratu. Nový štart navyše potrebuje úroveň zo súm. Pár krokov doma (kuchyňa,
+  WC) pridržanie nikdy nespustí, ani keď sú 60- a 180-minútové sumy ešte vysoké po dávnej prechádzke.
 - **Vysoká a stúpajúca glykémia:** nad 10 mmol/l (180 mg/dl) a stúpa → návrat je dvakrát kratší,
   aby sa jedlo neblokovalo hodinu.
 - **Nízka alebo klesajúca glykémia:** pod 4,5 mmol/l (81 mg/dl) alebo pokles 5 mg/dl za 5 minút
@@ -336,7 +344,11 @@ Dobré vedieť:
   Loop pri zlých dátach nikdy nezastaví inzulín.
 - **Pamäť:** je len v appke. Po reštarte appky nie je žiadny návrat, guard sa spustí znova pri
   ďalšej chôdzi.
-- **Bez údajov o krokoch:** guard nerobí nič a pamäť sa počas medzery zachová.
+- **Bez údajov o krokoch:** guard nerobí nič a dávkovanie je na 100 %, aj v strede chôdze, keď
+  senzor v telefóne prestane počítať. Pamäť sa počas medzery zachová.
+- **Bez úniku pri vysokej glykémii počas pohybu:** počas pohybu a pridržania ostáva temp bazál na 0 %
+  a SMB na 0, aj keď je glykémia vysoká. Pravidlo „vysoká a stúpajúca“ platí až pri návrate. Pri
+  dlhej chôdzi alebo behu s vysokým štartom to sleduj.
 - Čísla sú v kóde (`ActivityAfterglow.kt`), nie v nastaveniach. Ak bude po pár dňoch logu niektoré
   príliš silné alebo slabé, dáme to upraviť.
 

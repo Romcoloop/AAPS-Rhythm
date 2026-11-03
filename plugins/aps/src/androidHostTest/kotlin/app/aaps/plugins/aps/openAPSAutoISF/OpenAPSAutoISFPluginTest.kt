@@ -11,7 +11,6 @@ import app.aaps.core.interfaces.plugin.EnforcedState
 import app.aaps.core.keys.BooleanKey
 import app.aaps.core.keys.DoubleKey
 import app.aaps.core.keys.IntKey
-import app.aaps.core.keys.StringKey
 import app.aaps.core.keys.UnitDoubleKey
 import app.aaps.plugins.aps.openAPSAutoISF.logAnalysis.AutoIsfLogAnalysis
 import app.aaps.plugins.aps.openAPSAutoISF.steps.PhoneStepCounter
@@ -255,10 +254,6 @@ class OpenAPSAutoISFPluginTest : TestBaseWithProfile() {
             iob_threshold_percent = 100,
             profile_percentage = 100
         )
-        // no meal times set: meal factors are not changed
-        whenever(preferences.get(StringKey.ApsAutoIsfMealWindowBreakfast)).thenReturn("")
-        whenever(preferences.get(StringKey.ApsAutoIsfMealWindowLunch)).thenReturn("")
-        whenever(preferences.get(StringKey.ApsAutoIsfMealWindowDinner)).thenReturn("")
         assertThat(openAPSAutoISFPlugin.autoISF(profile)).isEqualTo(47.11)                             // inactive
         whenever(oapsProfile.enable_autoISF).thenReturn(true)
         val glucoseStatus = glucoseStatusProvider.glucoseStatusData as GlucoseStatusAutoIsf

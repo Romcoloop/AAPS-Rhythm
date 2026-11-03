@@ -123,12 +123,14 @@ object ActivityAfterglow {
         val priorAgeMin = if (prior.lastMovingMs > 0L) ((nowMs - prior.lastMovingMs) / 60_000.0).coerceAtLeast(0.0) else Double.MAX_VALUE
         val priorLive = prior.level != Level.NONE && priorAgeMin <= holdMin(prior.level) + taperMin(prior.level)
 
-        // Onset needs a level from the sums. A walk that goes on or starts again after a stop must show a
-        // real pace over 15 minutes (the same 25 steps/min as the effort belief), so a few steps at home
-        // do not start the hold again.
+        // Every start, new or after a stop, needs a real pace over 15 minutes (the same 25 steps/min as
+        // the effort belief) and 100 steps in the last 5 minutes. A few steps at home do not start it,
+        // also when the 60 and 180 minute sums are still high from a walk long ago. A new start needs
+        // a level from the sums as well.
         val level = classify(w)
-        val paceOk = if (priorLive) w.rate15 >= EffortActivityBelief.ACTIVE_STEPS_PER_MIN else level != Level.NONE
-        val moving = w.steps5 >= MOVING_STEPS_5 && paceOk
+        val moving = w.steps5 >= MOVING_STEPS_5 &&
+            w.rate15 >= EffortActivityBelief.ACTIVE_STEPS_PER_MIN &&
+            (priorLive || level != Level.NONE)
         val memory = when {
             moving -> Memory(level = if (priorLive) maxOf(prior.level, level) else level, lastMovingMs = nowMs)
             priorLive -> prior

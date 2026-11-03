@@ -6,7 +6,7 @@ four places. Everything else is upstream AndroidAPS.
 | What | Where in the app | Off means |
 |---|---|---|
 | 1. Blended BG for bg_ISF | AutoISF settings → Blended BG ISF weight | weight 0.0 = as upstream |
-| 2. Meal times and "meal factors outside meal times" | AutoISF settings | no meal time set = as upstream |
+| 2. Meal times (the windows of the meal slots) | AutoISF settings | no meal time set = as upstream |
 | 3. Slots: own values per meal, weekend and night | Meal slot settings + slot sections | switch off = as upstream |
 | 4. AutoISF log analysis (the tuning card) | card on the AutoISF plugin screen | reads only; writes on "Apply" |
 | 5. Steps and activity (branch `autoisf-steps`) | AutoISF settings → Steps and activity | all 5 switches off = as upstream |
@@ -43,15 +43,16 @@ Rules in code (`BlendedBg.kt`):
 
 The log shows it as `bgBlend` lines. A weight of 0.1–0.2 is a careful start.
 
-## 2. Meal times and the factor outside meal times
+## 2. Meal times
 
-Three windows in AutoISF settings: Breakfast / Lunch / Dinner time, written as `HH:MM-HH:MM`. Inside
-a window the meal factors (`bgBlend`, `pp_ISF` and `acce_ISF` above target) work with full weight.
-Outside all windows they are multiplied by **Meal factors outside meal times** (1.0 = no change,
-0.5 = half, 0.0 = off). Braking when BG falls is never reduced. With no window set, nothing changes.
+Three windows in AutoISF settings: Breakfast / Lunch / Dinner time, written as `HH:MM-HH:MM`. They
+are the windows of the weekday meal slots (chapter 3). On Saturday, Sunday and in holiday mode the
+weekend meal times are used instead, when separate weekend slots are on.
 
-The same windows are the windows of the weekday meal slots (chapter 3). On Saturday, Sunday and in
-holiday mode the weekend meal times are used instead, when separate weekend slots are on.
+There is no separate factor for the time outside the meals any more (the old *Meal factors outside
+meal times*). Outside all slot windows the **global values** are used, and for the night there is the
+**Night slot** with its own 15 values. If you want the time between the meals to be milder, change
+the global values. With the slots off, the windows do nothing and the loop works as upstream.
 
 ## 3. Slots
 
@@ -95,6 +96,9 @@ All in the settings of the OpenAPS AutoISF plugin.
 - Breakfast / Lunch / Dinner time (weekend) – shown while separate weekend slots are on
 - Holiday or vacation, and "Holiday or vacation ends on" (`YYYY-MM-DD`). With a date, the switch turns
   itself off the day after that date. Without a date you switch it off by hand.
+- **Copy global values to the night slot** – writes the global values into the **night slot only**. The
+  meal slots and the night time are not changed. A good start for the night: copy, then make the
+  values milder by hand (chapter 5).
 - **Copy global values to all slots** – writes the global values into **all seven** slots. Values
   already in the slots are lost. Good once, at the very start.
 - **Copy weekday slots to weekend** – writes the weekday breakfast / lunch / dinner values into the
@@ -111,7 +115,8 @@ almost without AutoISF. So fill a slot **before** you give it a window.
 1. Use meal slot settings → on.
 2. If the weekday slots are still equal to the global values: **Copy global values to all slots**.
    If you have already tuned the weekday slots: **do not** press it. Use **Copy weekday slots to
-   weekend** instead, and fill the Night slot by hand (chapter 5 has the values).
+   weekend** instead, and **Copy global values to the night slot** for the night (then make the
+   night milder, chapter 5 has the values).
 3. Set the weekday meal times (AutoISF settings) if they are not set yet.
 4. Separate weekend slots → on, set the weekend meal times, for example `07:00-10:00`, `12:00-15:00`,
    `18:00-21:00`.
@@ -146,6 +151,10 @@ One button: **Analyze last meal**. There is no choice of day, period or slot.
 - **The last meal** is the last meal slot (breakfast, lunch or dinner, weekday or weekend) whose meal
   time plus 3 hours are over. The log of the last 3 days is read. A meal that is still going on is
   skipped. The night slot is not a meal and is not analyzed.
+- The tail of a meal ends at the start of the next meal window of the same kind of day, so the rise
+  after lunch does not count for the breakfast.
+- A meal whose runs name no slot ran with the global values (the slots were off). It is shown, but it
+  gets no suggestion.
 - A meal counts for a slot only when the log lines of that day name the slot, so a weekday lunch
   window on a Saturday is not mixed into the weekday lunch.
 - Over means: the meal time ends at 14:00, the tail ends at 17:00, you can analyze after 17:00.
@@ -240,7 +249,7 @@ Starting values for the slots, until the analysis says otherwise:
 |---|---|
 | Breakfast, Lunch, Dinner (weekday) | the values you have tuned; they stay as they are |
 | … (weekend) | Copy weekday slots to weekend |
-| Night | the global values, but milder: `autoISF_max` 1.4, `bgAccel_ISF_weight` 0.15, `smb_delivery_ratio` 0.4 / min 0.5 / max 0.7, `smb_max_range_extension` 3. You sleep, so the loop should have less room, not more. |
+| Night | Copy global values to the night slot, then milder: `autoISF_max` 1.4, `bgAccel_ISF_weight` 0.15, `smb_delivery_ratio` 0.4 / min 0.5 / max 0.7, `smb_max_range_extension` 3. You sleep, so the loop should have less room, not more. |
 
 ## 6. What is planned
 
@@ -258,7 +267,7 @@ Starting values for the slots, until the analysis says otherwise:
 ## 7. For developers
 
 - `plugins/aps/.../openAPSAutoISF/BlendedBg.kt` – chapter 1. `MealWindows.kt` – windows, "over
-  midnight", the outside-meal scale.
+  midnight".
 - `AutoIsfSlots.kt` – the slots, the selection, holiday mode and the copy buttons. `AutoIsfSlotsTest`
   covers the selection rules.
 - Keys: `autoISF_slot_<slot>_<value>` in `DoubleKey` / `IntKey`, windows `autoISF_meal_window_*` in
@@ -323,9 +332,11 @@ Good to know:
 - **How the level is chosen:** the level is taken at the time of the movement and kept in a memory.
   After the walk the 60 and 180 minute sums stay high for hours, so they are not used for the way
   back. A new level during the same way back can only be higher.
-- **Moving or not:** "moving now" needs at least 100 steps in the last 5 minutes. A walk that goes on
-  or starts again during the way back must also show 25 steps/min over 15 minutes. A few steps at
-  home (the kitchen, the toilet) do not start the hold again.
+- **Moving or not:** "moving now" needs at least 100 steps in the last 5 minutes **and** a real pace of
+  25 steps/min over 15 minutes. This is the same for a new start and for a walk that goes on or starts
+  again during the way back. A new start also needs a level from the sums. A few steps at home (the
+  kitchen, the toilet) never start the hold, also when the 60 and 180 minute sums are still high from
+  a walk long ago.
 - **High and rising glucose:** above 10 mmol/l (180 mg/dl) and rising, the way back is half as long,
   so a meal is not blocked for an hour.
 - **Low or falling glucose:** under 4.5 mmol/l (81 mg/dl) or a fall of 5 mg/dl in 5 minutes or more,
@@ -335,7 +346,11 @@ Good to know:
   temp. The loop never suspends on bad data.
 - **Memory:** it is kept in the app only. After a restart of the app there is no way back, the
   guard starts again with the next walk.
-- **No step data:** the guard does nothing and the memory is kept for the time of the gap.
+- **No step data:** the guard does nothing and the dosing is at 100 %, also in the middle of a walk
+  when the phone sensor stops. The memory is kept for the time of the gap.
+- **No escape for high glucose while you move:** during the movement and the hold, the temp basal stays
+  at 0 % and the SMB at 0 even when glucose is high. The "high and rising" rule works only in the way
+  back. Watch it on a long walk or a run with a high start.
 - The numbers are in the code (`ActivityAfterglow.kt`), not in the settings. Tell me if one of them is
   too strong or too weak after a few days of the log.
 

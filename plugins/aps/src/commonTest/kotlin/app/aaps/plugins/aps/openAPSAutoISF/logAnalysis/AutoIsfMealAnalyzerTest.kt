@@ -62,6 +62,8 @@ class AutoIsfMealAnalyzerTest {
         assertEquals(72, meals[0].runs)
         assertEquals(11 * 60 * 60_000L, meals[0].start)
         assertEquals(16 * 60 * 60_000L + 55 * 60_000L, meals[0].end)
+        // meal time 11:00-14:00 plus a tail of 3 hours
+        assertEquals(17 * 60 * 60_000L, meals[0].plannedEnd)
         assertEquals(dayMillis + 11 * 60 * 60_000L, meals[1].start)
     }
 
@@ -82,7 +84,10 @@ class AutoIsfMealAnalyzerTest {
         assertEquals(48, full.runs)
         assertEquals(22 * 60 * 60_000L, full.start)
         assertEquals(dayMillis + 115 * 60_000L, full.end)
+        // meal time 22:00-01:00 plus a tail of 1 hour
+        assertEquals(dayMillis + 2 * 60 * 60_000L, full.plannedEnd)
         assertTrue(meals[2].incomplete)
+        assertTrue(meals[2].plannedEnd > meals[2].end)
         assertEquals(1, meals.count { it.used })
         assertEquals(2, meals.count { !it.used })
     }

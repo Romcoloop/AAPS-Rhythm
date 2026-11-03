@@ -1,7 +1,7 @@
 # This fork: AutoISF with slots and a tuning card
 
 This is a fork of AndroidAPS with four changes to the **OpenAPS AutoISF** plugin: blended BG for
-bg_ISF, meal times with a factor outside meal times, **slots** (own AutoISF and SMB values for each
+bg_ISF, meal times, **slots** (own AutoISF and SMB values for each
 meal, for the weekend and for the night) and an **AutoISF log analysis** card that suggests settings
 from the phone's logs. Nothing changes a value on its own.
 

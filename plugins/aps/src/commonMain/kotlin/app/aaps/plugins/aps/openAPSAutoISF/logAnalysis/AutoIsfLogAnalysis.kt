@@ -29,7 +29,12 @@ data class AutoIsfLogAnalysisResult(
      * The meal slots are switched off, so the algorithm uses the global values and a change of
      * the slot values would do nothing. Suggestions are then not offered.
      */
-    val slotsOff: Boolean = false
+    val slotsOff: Boolean = false,
+    /**
+     * No run of the meal names a slot, so the loop used the global values then (the slots were off,
+     * or the build was older). A suggestion for the slot would change something that took no part.
+     */
+    val globalValues: Boolean = false
 )
 
 /** Result of [AutoIsfLogAnalysis.apply]. */
@@ -94,7 +99,7 @@ class AutoIsfLogAnalysis(
         val inPeriod = analyzer.oneRunPerBg(runs.filter { it.timestamp >= since }.sortedBy { it.timestamp })
         val found = MEAL_SLOTS.flatMap { slot ->
             val window = MealWindows.parse(mealTime(slot)) ?: return@flatMap emptyList()
-            mealAnalyzer.episodes(inPeriod, window, AutoIsfMealAnalyzer.DEFAULT_TAIL_MINUTES)
+            mealAnalyzer.episodes(inPeriod, window, tailMinutes(slot, window))
                 .filter { meal -> isOver(meal, now) && belongsToSlot(slot, inPeriod.filter { it.timestamp in meal.start..meal.end }) }
                 .map { slot to it }
         }
@@ -114,15 +119,26 @@ class AutoIsfLogAnalysis(
         val full = analyzer.analyze(mealRuns, meal.start, currentValues(slot), MIN_HOURS_MEAL, inMealTime)
         // One meal is little data: a suggestion only for a complete meal without a temp target, and
         // only the strongest one.
-        val report = if (slotsOff || !meal.used) full.copy(suggestions = emptyList()) else full.copy(suggestions = full.suggestions.take(1))
-        return AutoIsfLogAnalysisResult(files, slot, meal, report, slotsOff = slotsOff)
+        val globalValues = mealRuns.none { it.slotName != null }
+        val report = if (slotsOff || globalValues || !meal.used) full.copy(suggestions = emptyList()) else full.copy(suggestions = full.suggestions.take(1))
+        return AutoIsfLogAnalysisResult(files, slot, meal, report, slotsOff = slotsOff, globalValues = globalValues)
     }
 
+    /** A meal is over when its meal time plus tail is over by the clock. A gap in the log does not change that. */
+    private fun isOver(meal: AutoIsfMealEpisode, now: Long): Boolean = now >= meal.plannedEnd
+
     /**
-     * A meal is over when the log covers it to the end. A meal that the log does not cover but whose
-     * last run is old is over too (a gap in the log); it is shown, but marked as incomplete.
+     * How long a meal is followed after its meal time: the usual tail, but not into the next meal of
+     * the same kind of day. Otherwise the rise after lunch would count for the breakfast.
      */
-    private fun isOver(meal: AutoIsfMealEpisode, now: Long): Boolean = !(meal.incomplete && now - meal.end <= STILL_GOING_MILLIS)
+    private fun tailMinutes(slot: AutoIsfSlots.Slot, window: MealWindows.Window): Int {
+        val untilNextMeal = MEAL_SLOTS
+            .filter { it != slot && it.dayType == slot.dayType }
+            .mapNotNull { MealWindows.parse(mealTime(it)) }
+            .map { (it.startMinute - window.endMinute).mod(MINUTES_PER_DAY) }
+            .minOrNull() ?: AutoIsfMealAnalyzer.DEFAULT_TAIL_MINUTES
+        return minOf(AutoIsfMealAnalyzer.DEFAULT_TAIL_MINUTES, untilNextMeal)
+    }
 
     private fun emptyReport(since: Long) = AutoIsfLogAnalyzer().analyze(emptyList(), since, emptyMap())
 
@@ -152,8 +168,7 @@ class AutoIsfLogAnalysis(
         /** How far back the log is read to find the last meal. Covers a weekend and a skipped meal. */
         const val LOOK_BACK_DAYS = 3
 
-        /** A meal whose last run is not older than this and is not covered to the end is still going on. */
-        private const val STILL_GOING_MILLIS = 15 * 60 * 1000L
+        private const val MINUTES_PER_DAY = 24 * 60
 
         /** One meal with its tail: about three hours of runs. */
         const val MIN_HOURS_MEAL = 3.0

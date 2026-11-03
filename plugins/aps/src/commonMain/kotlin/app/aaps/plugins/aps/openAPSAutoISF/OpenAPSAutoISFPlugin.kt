@@ -188,9 +188,6 @@ open class OpenAPSAutoISFPlugin(
     private val bgBrake_ISF_weight; get() = slots.get(DoubleKey.ApsAutoIsfBgBrakeWeight)
     private val pp_ISF_weight; get() = slots.get(DoubleKey.ApsAutoIsfPpWeight)
     private val bgBlend_ISF_weight; get() = slots.get(DoubleKey.ApsAutoIsfBgBlendWeight)
-    /** Meal times of the day: the weekday ones, or the weekend ones on a weekend day or in holiday mode. */
-    private val mealWindowTexts get() = slots.mealWindowTexts()
-    private val outsideMealFactor; get() = preferences.get(DoubleKey.ApsAutoIsfOutsideMealFactor)
     private val lower_ISFrange_weight; get() = slots.get(DoubleKey.ApsAutoIsfLowBgWeight)
     private val higher_ISFrange_weight; get() = slots.get(DoubleKey.ApsAutoIsfHighBgWeight)
     private val dura_ISF_weight; get() = slots.get(DoubleKey.ApsAutoIsfDuraWeight)
@@ -601,13 +598,6 @@ open class OpenAPSAutoISFPlugin(
             autosensData.autosensResult
         } else autosensResult.sensResult = "autosens disabled"
 
-        // usual meal times: outside them the meal factors (bgBlend, pp_ISF, acce_ISF above target) are weaker
-        val meal = MealWindows.calculate(mealWindowTexts, slots.minuteOfRun, outsideMealFactor)
-        val mealScale = meal.scale
-        if (meal.windowCount > 0) {
-            if (meal.inWindow) consoleError.add("meal time: meal factors with full weight")
-            else consoleError.add("outside meal time: meal factors scaled by ${round(mealScale, 2)}")
-        }
         // slots: inside a meal time or the night time the AutoISF and SMB values of that slot are used
         if (slots.enabled) {
             val slot = slots.activeSlot()
@@ -660,7 +650,7 @@ open class OpenAPSAutoISFPlugin(
                 if (bg_acce < 0.0) {
                     acce_weight = bgBrake_ISF_weight
                 } else if (bg_acce > 0.0) {
-                    acce_weight = bgAccel_ISF_weight * mealScale             // only the part that adds insulin is scaled
+                    acce_weight = bgAccel_ISF_weight
                 }
             }
             acce_ISF = 1.0 + bg_acce * cap_weight * acce_weight * fit_share
@@ -678,9 +668,9 @@ open class OpenAPSAutoISFPlugin(
             a2 = glucose_status.a2,
             corrSqu = fit_corr,
             targetBg = target_bg,
-            weight = bgBlend_ISF_weight * mealScale
+            weight = bgBlend_ISF_weight
         )
-        if (bgBlend_ISF_weight * mealScale > 0.0) {
+        if (bgBlend_ISF_weight > 0.0) {
             if (blend.lift > 0.0)
                 consoleError.add("bgBlend: BG for bg_ISF lifted from ${convert_bg(glucose_status.glucose)} to ${convert_bg(blend.bg)} (parabola in ${BlendedBg.HORIZON_MINUTES.toInt()}m: ${convert_bg(blend.predictedBg ?: blend.bg)})")
             else
@@ -715,7 +705,7 @@ open class OpenAPSAutoISFPlugin(
             }
 
             else                             -> {
-                pp_ISF = 1.0 + max(0.0, bg_delta * pp_ISF_weight * mealScale)
+                pp_ISF = 1.0 + max(0.0, bg_delta * pp_ISF_weight)
                 consoleError.add("pp_ISF adaptation is ${round(pp_ISF, 2)}")
                 if (pp_ISF != 1.0) {
                     sens_modified = true
@@ -1001,7 +991,6 @@ open class OpenAPSAutoISFPlugin(
                     StringKey.ApsAutoIsfMealWindowBreakfast,
                     StringKey.ApsAutoIsfMealWindowLunch,
                     StringKey.ApsAutoIsfMealWindowDinner,
-                    DoubleKey.ApsAutoIsfOutsideMealFactor,
                     DoubleKey.ApsAutoIsfDuraWeight,
                     IntKey.ApsAutoIsfIobThPercent
                 )
@@ -1020,6 +1009,7 @@ open class OpenAPSAutoISFPlugin(
                     BooleanKey.ApsAutoIsfHolidayMode,
                     StringKey.ApsAutoIsfHolidayUntil,
                     ApsIntentKey.AutoIsfSlotsCopyGlobal.withClick { slots.copyGlobalToAllSlots() },
+                    ApsIntentKey.AutoIsfSlotsCopyGlobalToNight.withClick { slots.copyGlobalToNightSlot() },
                     ApsIntentKey.AutoIsfSlotsCopyWeekdayToWeekend.withClick { slots.copyWeekdayToWeekend() }
                 )
             ),
