@@ -6,7 +6,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-/** The pure parts of [AutoIsfLogAnalysis]: which meals belong to a slot, and the periods offered. */
+/** The pure part of [AutoIsfLogAnalysis]: which meals belong to a slot. */
 class AutoIsfLogAnalysisTest {
 
     private fun run(timestamp: Long, slotName: String?) = AutoIsfLogRun(
@@ -57,14 +57,5 @@ class AutoIsfLogAnalysisTest {
         assertFalse(AutoIsfLogAnalysis.belongsToSlot(Slot.NIGHT, old))
         // one named run is enough to decide
         assertFalse(AutoIsfLogAnalysis.belongsToSlot(Slot.BREAKFAST, listOf(run(1, null), run(2, "none"))))
-    }
-
-    @Test
-    fun `weekend slots offer longer periods`() {
-        assertEquals(listOf(1, 3, 7), AutoIsfLogAnalysis.dayChoices(null))
-        assertEquals(listOf(1, 3, 7), AutoIsfLogAnalysis.dayChoices(Slot.LUNCH))
-        assertEquals(listOf(1, 3, 7), AutoIsfLogAnalysis.dayChoices(Slot.NIGHT))
-        assertEquals(listOf(14, 28), AutoIsfLogAnalysis.dayChoices(Slot.LUNCH_WEEKEND))
-        assertTrue(AutoIsfLogAnalysis.DEFAULT_DAYS in AutoIsfLogAnalysis.dayChoices(null))
     }
 }

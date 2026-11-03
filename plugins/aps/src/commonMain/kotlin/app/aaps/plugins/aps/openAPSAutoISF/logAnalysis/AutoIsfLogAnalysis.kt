@@ -16,18 +16,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
 
-/** Result of [AutoIsfLogAnalysis.analyze]. */
+/** Result of [AutoIsfLogAnalysis.analyzeLastMeal]. */
 data class AutoIsfLogAnalysisResult(
-    val days: Int,
-    /** The meal slot that was analyzed, null for the whole day. */
-    val slot: AutoIsfSlots.Slot?,
     val filesRead: Int,
+    /** The meal slot of the analyzed meal, null when the log has no finished meal. */
+    val slot: AutoIsfSlots.Slot?,
+    /** The last finished meal, null when there is none. */
+    val meal: AutoIsfMealEpisode?,
+    /** Facts and the suggestion of this one meal. */
     val report: AutoIsfLogReport,
-    /** Meal by meal, only for a slot. */
-    val meals: List<AutoIsfMealEpisode> = emptyList(),
-    val mealStats: AutoIsfMealStats? = null,
-    /** The slot has no valid meal time, so nothing could be analyzed. */
-    val noMealTime: Boolean = false,
     /**
      * The meal slots are switched off, so the algorithm uses the global values and a change of
      * the slot values would do nothing. Suggestions are then not offered.
@@ -47,8 +44,9 @@ enum class AutoIsfApplyResult {
 /**
  * Runs the AutoISF log analysis and writes a suggested value when the user asks for it.
  *
- * With a meal slot, only the runs of that meal time (plus the tail after it) are used, the
- * current values are read from the slot keys and [apply] writes to the slot keys.
+ * It looks at one meal only: the last meal that is over. Only the runs of that meal time (plus the
+ * tail after it) are used, the current values are read from the keys of the slot of that meal and
+ * [apply] writes to the same slot keys.
  *
  * Nothing is ever changed without the user: [apply] is only called from a button, after a
  * confirmation dialog.
@@ -71,56 +69,67 @@ class AutoIsfLogAnalysis(
     /** The meal time text of a slot, as set in the preferences. */
     fun mealTime(slot: AutoIsfSlots.Slot): String = preferences.get(slot.windowKey)
 
-    suspend fun analyze(days: Int, slot: AutoIsfSlots.Slot? = null): AutoIsfLogAnalysisResult {
-        val since = dateUtil.now() - days * DAY_MILLIS
+    /**
+     * Finds the last meal that is over (its meal time plus the tail) in the log of the last
+     * [LOOK_BACK_DAYS] days and looks at it. The meal slots are tried all, the weekday and the
+     * weekend ones; the runs name the slot they were run with, so a meal is placed in one slot only.
+     */
+    suspend fun analyzeLastMeal(): AutoIsfLogAnalysisResult {
+        val now = dateUtil.now()
+        val since = now - LOOK_BACK_DAYS * DAY_MILLIS
         val parser = AutoIsfLogParser()
         val files = source.readLines(since) { parser.accept(it) }
-        val result = withContext(Dispatchers.Default) {
-            if (slot == null) wholeDay(days, since, parser.runs, files) else oneSlot(days, since, slot, parser.runs, files)
-        }
+        val result = withContext(Dispatchers.Default) { lastMeal(now, since, parser.runs, files) }
         aapsLogger.debug(
             LTag.APS,
-            "AutoISF log analysis: $days days, slot ${slot?.label ?: "all"}, $files files, ${result.report.stats.runs} runs, " +
-                "${result.meals.size} meals, ${result.report.suggestions.size} suggestions"
+            "AutoISF log analysis: last meal ${result.slot?.label ?: "none"}, $files files, ${result.report.stats.runs} runs, " +
+                "${result.report.suggestions.size} suggestions"
         )
         return result
     }
 
-    private fun wholeDay(days: Int, since: Long, runs: List<AutoIsfLogRun>, files: Int): AutoIsfLogAnalysisResult {
-        val report = AutoIsfLogAnalyzer().analyze(runs, since, currentValues(null))
-        return AutoIsfLogAnalysisResult(days, null, files, report)
-    }
-
-    private fun oneSlot(days: Int, since: Long, slot: AutoIsfSlots.Slot, runs: List<AutoIsfLogRun>, files: Int): AutoIsfLogAnalysisResult {
-        val window = MealWindows.parse(mealTime(slot))
-            ?: return AutoIsfLogAnalysisResult(days, slot, files, emptyReport(since), noMealTime = true)
+    private fun lastMeal(now: Long, since: Long, runs: List<AutoIsfLogRun>, files: Int): AutoIsfLogAnalysisResult {
         val analyzer = AutoIsfLogAnalyzer()
         val mealAnalyzer = AutoIsfMealAnalyzer { MidnightUtils.secondsFromMidnight(it) / 60 }
         val inPeriod = analyzer.oneRunPerBg(runs.filter { it.timestamp >= since }.sortedBy { it.timestamp })
-        val meals = mealAnalyzer.episodes(inPeriod, window, AutoIsfMealAnalyzer.DEFAULT_TAIL_MINUTES)
-            .filter { meal -> belongsToSlot(slot, inPeriod.filter { it.timestamp in meal.start..meal.end }) }
-        val mealRuns = meals.filter { it.used }.flatMap { meal -> inPeriod.filter { it.timestamp in meal.start..meal.end } }
+        val found = MEAL_SLOTS.flatMap { slot ->
+            val window = MealWindows.parse(mealTime(slot)) ?: return@flatMap emptyList()
+            mealAnalyzer.episodes(inPeriod, window, AutoIsfMealAnalyzer.DEFAULT_TAIL_MINUTES)
+                .filter { meal -> isOver(meal, now) && belongsToSlot(slot, inPeriod.filter { it.timestamp in meal.start..meal.end }) }
+                .map { slot to it }
+        }
+        val (slot, meal) = found.maxByOrNull { it.second.end }
+            ?: return AutoIsfLogAnalysisResult(files, null, null, emptyReport(since))
+        val window = MealWindows.parse(mealTime(slot))
+        val mealRuns = inPeriod.filter { it.timestamp in meal.start..meal.end }
         // Inside the meal time the log shows the slot values, in the tail the global ones. Only the
         // meal time counts when looking for a change of the settings. A run without the slot line
         // (older build) is placed by the clock.
         val inMealTime: (AutoIsfLogRun) -> Boolean = { run ->
-            run.slotName?.let { it == slot.label } ?: window.contains(MidnightUtils.secondsFromMidnight(run.timestamp) / 60)
+            run.slotName?.let { it == slot.label } ?: (window?.contains(MidnightUtils.secondsFromMidnight(run.timestamp) / 60) ?: true)
         }
         // A weekend slot is also dead while "Separate weekend slots" is off: the weekday slots run then.
         val slotsOff = !preferences.get(BooleanKey.ApsAutoIsfSlotsEnabled) ||
             (slot.dayType == AutoIsfSlots.DayType.WEEKEND && !preferences.get(BooleanKey.ApsAutoIsfWeekendSlotsEnabled))
-        val full = analyzer.analyze(mealRuns, since, currentValues(slot), MIN_HOURS_SLOT, inMealTime)
-        val report = if (slotsOff) full.copy(suggestions = emptyList()) else full
-        val shown = if (mealRuns.isEmpty()) meals else meals.filter { it.start >= report.fromTime }
-        return AutoIsfLogAnalysisResult(days, slot, files, report, shown, mealAnalyzer.stats(shown), slotsOff = slotsOff)
+        val full = analyzer.analyze(mealRuns, meal.start, currentValues(slot), MIN_HOURS_MEAL, inMealTime)
+        // One meal is little data: a suggestion only for a complete meal without a temp target, and
+        // only the strongest one.
+        val report = if (slotsOff || !meal.used) full.copy(suggestions = emptyList()) else full.copy(suggestions = full.suggestions.take(1))
+        return AutoIsfLogAnalysisResult(files, slot, meal, report, slotsOff = slotsOff)
     }
+
+    /**
+     * A meal is over when the log covers it to the end. A meal that the log does not cover but whose
+     * last run is old is over too (a gap in the log); it is shown, but marked as incomplete.
+     */
+    private fun isOver(meal: AutoIsfMealEpisode, now: Long): Boolean = !(meal.incomplete && now - meal.end <= STILL_GOING_MILLIS)
 
     private fun emptyReport(since: Long) = AutoIsfLogAnalyzer().analyze(emptyList(), since, emptyMap())
 
     /**
-     * Writes the suggested value. With a slot, it goes to the slot copy of the setting.
+     * Writes the suggested value to the slot copy of the setting.
      */
-    fun apply(suggestion: AutoIsfSuggestion, slot: AutoIsfSlots.Slot?): AutoIsfApplyResult {
+    fun apply(suggestion: AutoIsfSuggestion, slot: AutoIsfSlots.Slot): AutoIsfApplyResult {
         val key = keyFor(suggestion.param, slot)
         val now = preferences.get(key)
         if (abs(now - suggestion.current) > 1e-6) return AutoIsfApplyResult.ChangedMeanwhile
@@ -130,28 +139,27 @@ class AutoIsfLogAnalysis(
         return AutoIsfApplyResult.Applied
     }
 
-    /** The key to read and write: the slot copy with a slot, else the global key. */
-    private fun keyFor(param: AutoIsfParam, slot: AutoIsfSlots.Slot?): DoubleKey =
-        if (slot == null) param.key else slot.doubles.getValue(param.key)
+    /** The key to read and write: the slot copy of the setting. */
+    private fun keyFor(param: AutoIsfParam, slot: AutoIsfSlots.Slot): DoubleKey = slot.doubles.getValue(param.key)
 
-    private fun currentValues(slot: AutoIsfSlots.Slot?): Map<AutoIsfParam, Double> =
+    private fun currentValues(slot: AutoIsfSlots.Slot): Map<AutoIsfParam, Double> =
         AutoIsfParam.entries.associateWith { preferences.get(keyFor(it, slot)) }
 
     companion object {
 
         private const val DAY_MILLIS = 24 * 60 * 60 * 1000L
-        private val DAY_CHOICES = listOf(1, 3, 7)
 
-        /** A weekend slot sees two meals a week, so its periods are longer. */
-        private val DAY_CHOICES_WEEKEND = listOf(14, 28)
-        const val DEFAULT_DAYS = 3
+        /** How far back the log is read to find the last meal. Covers a weekend and a skipped meal. */
+        const val LOOK_BACK_DAYS = 3
 
-        /** For one slot: about two meals with their tails. */
-        const val MIN_HOURS_SLOT = 6.0
+        /** A meal whose last run is not older than this and is not covered to the end is still going on. */
+        private const val STILL_GOING_MILLIS = 15 * 60 * 1000L
 
-        /** The periods offered for a slot (or the whole day with null). */
-        fun dayChoices(slot: AutoIsfSlots.Slot?): List<Int> =
-            if (slot?.dayType == AutoIsfSlots.DayType.WEEKEND) DAY_CHOICES_WEEKEND else DAY_CHOICES
+        /** One meal with its tail: about three hours of runs. */
+        const val MIN_HOURS_MEAL = 3.0
+
+        /** The slots that are meals. The night is not a meal. */
+        private val MEAL_SLOTS = AutoIsfSlots.Slot.entries.filter { it != AutoIsfSlots.Slot.NIGHT }
 
         /**
          * True when a meal (the runs of one window plus tail) was run with [slot].

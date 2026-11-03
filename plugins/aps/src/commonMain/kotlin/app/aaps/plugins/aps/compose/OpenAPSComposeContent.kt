@@ -54,8 +54,6 @@ class OpenAPSComposeContent(
                 {
                     AutoIsfLogAnalysisCard(
                         state = logState.value,
-                        onDaysChange = logViewModel::onDaysChange,
-                        onSlotChange = logViewModel::onSlotChange,
                         onAnalyze = logViewModel::onAnalyze,
                         onApplyClick = logViewModel::onApplyClick,
                         onApplyConfirm = logViewModel::onApplyConfirm,
