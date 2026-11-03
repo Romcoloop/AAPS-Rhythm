@@ -5,13 +5,21 @@ bg_ISF, meal times, **slots** (own AutoISF and SMB values for each
 meal, for the weekend and for the night) and an **AutoISF log analysis** card that suggests settings
 from the phone's logs. Nothing changes a value on its own.
 
-* **Manual:** [docs/autoisf-fork.md](https://github.com/Romcoloop/AndroidAPS/blob/autoisf-analysis/docs/autoisf-fork.md)
-  (English) · [docs/autoisf-fork.sk.md](https://github.com/Romcoloop/AndroidAPS/blob/autoisf-analysis/docs/autoisf-fork.sk.md) (slovensky)
-* **Branch to build and install:** `autoisf-analysis` (workflow "AutoISF APK" under Actions).
-  `autoisf-custom` is the base, `autoisf-slots` and `autoisf-slots-2` are the steps in between.
-  `autoisf-steps` adds step counting with the phone and three step rules from OpenAPS AIMI (sport
-  guard, SMB spacing after activity, effort protection), all off by default - see chapter 8 of the manual.
+* **Manual:** [docs/autoisf-fork.md](https://github.com/Romcoloop/AndroidAPS/blob/autoisf-steps/docs/autoisf-fork.md)
+  (English) · [docs/autoisf-fork.sk.md](https://github.com/Romcoloop/AndroidAPS/blob/autoisf-steps/docs/autoisf-fork.sk.md) (slovensky)
+* **Branch to build and install:** `autoisf-steps` (workflow "AutoISF APK" under Actions). It has
+  everything. `autoisf-custom` is the base, `autoisf-slots`, `autoisf-slots-2` and `autoisf-analysis`
+  are the steps in between. `autoisf-steps` adds step counting with the phone and three step rules
+  from OpenAPS AIMI (sport guard, SMB spacing after activity, effort protection), all off by default -
+  see chapter 8 of the manual.
 * Everything else is upstream AndroidAPS, see below. Use it at your own risk, as with any AAPS build.
+
+## How this fork is checked
+
+The author checks the code himself: he uses this build every day, and he adds changes and improvements
+step by step. The code is also checked by the unit tests of the APS module and by building the app.
+Nobody has verified its dosing in a clinical way, and it is not an approved medical product. Read the
+code and the manual before you use it.
 
 ## Credits and licence
 

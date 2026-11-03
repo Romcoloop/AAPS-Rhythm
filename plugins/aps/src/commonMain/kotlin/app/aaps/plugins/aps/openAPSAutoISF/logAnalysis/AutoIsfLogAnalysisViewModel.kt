@@ -27,15 +27,21 @@ data class AutoIsfSuggestionUi(
 
 @Immutable
 data class AutoIsfLogUiState(
+    /** How many hours before now are analyzed. */
+    val hours: Int = AutoIsfLogAnalysis.DEFAULT_HOURS,
     /** The meal slot of the analyzed meal. "Apply" writes to this slot. */
     val slot: AutoIsfSlots.Slot? = null,
     val running: Boolean = false,
     val hasResult: Boolean = false,
-    /** Which meal this is: slot, day and time. */
+    /** What was looked at: the slot, the day and the time. */
     val mealTitle: String = "",
-    /** The facts of the meal. */
+    /** The facts of the last hours. */
     val summary: List<KeyValueRow> = emptyList(),
-    /** Plain notes shown above the suggestions: no meal found, settings changed, nothing found. */
+    /** Whose values the list shows: the slot in use now, or the global values. */
+    val parametersTitle: String = "",
+    /** All AutoISF and SMB delivery numbers in use now; a changed value shows the suggestion: 1.60 → 1.50. */
+    val parameters: List<KeyValueRow> = emptyList(),
+    /** Plain notes shown above the suggestions: too few runs, settings changed, nothing found. */
     val notes: List<String> = emptyList(),
     val events: List<String> = emptyList(),
     val suggestions: List<AutoIsfSuggestionUi> = emptyList(),
@@ -54,16 +60,23 @@ class AutoIsfLogAnalysisViewModel(
     private val _uiState = MutableStateFlow(AutoIsfLogUiState())
     val uiState: StateFlow<AutoIsfLogUiState> = _uiState.asStateFlow()
 
+    /** Also drops the result on screen: it belongs to the hours that were analyzed. */
+    fun onHoursChange(hours: Int) {
+        if (_uiState.value.running || hours !in 1..AutoIsfLogAnalysis.MAX_HOURS) return
+        _uiState.value = AutoIsfLogUiState(hours = hours)
+    }
+
     fun onAnalyze() {
+        val hours = _uiState.value.hours
         if (_uiState.value.running) return
-        _uiState.update { AutoIsfLogUiState(running = true) }
+        _uiState.update { AutoIsfLogUiState(hours = hours, running = true) }
         scope.launch {
             val newState = try {
-                buildState(analysis.analyzeLastMeal())
+                buildState(analysis.analyzeRecent(hours))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                AutoIsfLogUiState(hasResult = true, message = rh.gs(ApsStrings.autoisf_log_read_error, e.message ?: e.toString()))
+                AutoIsfLogUiState(hours = hours, hasResult = true, message = rh.gs(ApsStrings.autoisf_log_read_error, e.message ?: e.toString()))
             }
             _uiState.value = newState
         }
@@ -104,10 +117,10 @@ class AutoIsfLogAnalysisViewModel(
     private fun buildState(result: AutoIsfLogAnalysisResult): AutoIsfLogUiState {
         val report = result.report
         val stats = report.stats
-        val meal = result.meal
+        val recent = result.recent
         val slot = result.slot
-        if (meal == null || slot == null)
-            return AutoIsfLogUiState(hasResult = true, notes = listOf(rh.gs(ApsStrings.autoisf_log_no_meal, AutoIsfLogAnalysis.LOOK_BACK_DAYS)))
+        if (recent == null)
+            return AutoIsfLogUiState(hasResult = true, hours = result.hours, notes = listOf(rh.gs(ApsStrings.autoisf_log_no_recent_runs, result.hours)))
 
         val df = analysis.decimalFormatter
         val dateUtil = analysis.dateUtil
@@ -122,37 +135,36 @@ class AutoIsfLogAnalysisViewModel(
 
         val mealTitle = rh.gs(
             ApsStrings.autoisf_log_meal_title,
-            rh.gs(slot.titleRef()),
-            dateUtil.dateStringShort(meal.start),
-            dateUtil.timeString(meal.start),
-            dateUtil.timeString(meal.end)
+            slot?.let { rh.gs(it.titleRef()) } ?: rh.gs(ApsStrings.autoisf_log_title_recent, result.hours),
+            dateUtil.dateStringShort(recent.start),
+            dateUtil.timeString(recent.start),
+            dateUtil.timeString(recent.end)
         )
 
         val summary = listOf(
             KeyValueRow(
                 rh.gs(ApsStrings.autoisf_log_meal_peak),
-                rh.gs(ApsStrings.autoisf_log_meal_peak_value, profileUtil.fromMgdlToStringWithUnits(meal.peakBg), dateUtil.timeString(meal.peakTime), delta(meal.peakAboveTarget))
+                rh.gs(ApsStrings.autoisf_log_meal_peak_value, profileUtil.fromMgdlToStringWithUnits(recent.peakBg), dateUtil.timeString(recent.peakTime), delta(recent.peakAboveTarget))
             ),
-            KeyValueRow(rh.gs(ApsStrings.autoisf_log_meal_time_to_peak), minutes(meal.minutesToPeak)),
-            KeyValueRow(rh.gs(ApsStrings.autoisf_log_meal_above, delta(AutoIsfMealAnalyzer.ABOVE_1_MGDL)), minutes(meal.minutesAbove1)),
-            KeyValueRow(rh.gs(ApsStrings.autoisf_log_meal_above, delta(AutoIsfMealAnalyzer.ABOVE_2_MGDL)), minutes(meal.minutesAbove2)),
-            KeyValueRow(rh.gs(ApsStrings.autoisf_log_meal_low_time, profileUtil.fromMgdlToStringWithUnits(AutoIsfLogAnalyzer.LOW_MGDL)), minutes(meal.minutesLow)),
-            KeyValueRow(rh.gs(ApsStrings.autoisf_log_meal_end), delta(meal.endAboveTarget)),
-            KeyValueRow(rh.gs(ApsStrings.autoisf_log_smbs), rh.gs(ApsStrings.autoisf_log_smbs_value, meal.smbCount, df.to2Decimal(meal.smbUnits))),
-            KeyValueRow(rh.gs(ApsStrings.autoisf_log_meal_max_limited), pct(meal.maxLimitedPct)),
-            KeyValueRow(rh.gs(ApsStrings.autoisf_log_meal_smb_at_max), pct(meal.smbAtMaxBolusPct)),
-            KeyValueRow(rh.gs(ApsStrings.autoisf_log_meal_driver), driverName(meal.dominantDriver))
+            KeyValueRow(rh.gs(ApsStrings.autoisf_log_meal_above, delta(AutoIsfRecentAnalyzer.ABOVE_1_MGDL)), minutes(recent.minutesAbove1)),
+            KeyValueRow(rh.gs(ApsStrings.autoisf_log_meal_above, delta(AutoIsfRecentAnalyzer.ABOVE_2_MGDL)), minutes(recent.minutesAbove2)),
+            KeyValueRow(rh.gs(ApsStrings.autoisf_log_meal_low_time, profileUtil.fromMgdlToStringWithUnits(AutoIsfLogAnalyzer.LOW_MGDL)), minutes(recent.minutesLow)),
+            KeyValueRow(rh.gs(ApsStrings.autoisf_log_meal_end), delta(recent.endAboveTarget)),
+            KeyValueRow(rh.gs(ApsStrings.autoisf_log_smbs), rh.gs(ApsStrings.autoisf_log_smbs_value, recent.smbCount, df.to2Decimal(recent.smbUnits))),
+            KeyValueRow(rh.gs(ApsStrings.autoisf_log_meal_max_limited), pct(recent.maxLimitedPct)),
+            KeyValueRow(rh.gs(ApsStrings.autoisf_log_meal_smb_at_max), pct(recent.smbAtMaxBolusPct)),
+            KeyValueRow(rh.gs(ApsStrings.autoisf_log_meal_driver), driverName(recent.dominantDriver))
         )
 
         val notes = buildList {
+            if (slot == null) add(rh.gs(ApsStrings.autoisf_log_mixed_values))
             if (result.slotsOff) add(rh.gs(ApsStrings.autoisf_log_slots_off))
-            if (result.globalValues) add(rh.gs(ApsStrings.autoisf_log_meal_global))
-            if (meal.hadTempTarget) add(rh.gs(ApsStrings.autoisf_log_meal_temp_target))
-            if (meal.incomplete) add(rh.gs(ApsStrings.autoisf_log_meal_incomplete))
+            if (recent.hadTempTarget) add(rh.gs(ApsStrings.autoisf_log_meal_temp_target))
+            if (recent.incomplete) add(rh.gs(ApsStrings.autoisf_log_meal_incomplete))
             report.settingsChangedAt?.let { add(rh.gs(ApsStrings.autoisf_log_settings_changed, dateUtil.dateAndTimeString(it))) }
-            if (meal.used && !result.slotsOff && !result.globalValues) {
+            if (slot != null && recent.used && !result.slotsOff) {
                 if (!report.enoughData)
-                    add(rh.gs(ApsStrings.autoisf_log_not_enough_data, rh.gs(CoreUiStrings.format_hours, stats.hours), rh.gs(CoreUiStrings.format_hours, AutoIsfLogAnalysis.MIN_HOURS_MEAL)))
+                    add(rh.gs(ApsStrings.autoisf_log_not_enough_data, rh.gs(CoreUiStrings.format_hours, stats.hours), rh.gs(CoreUiStrings.format_hours, AutoIsfLogAnalysis.MIN_HOURS_RECENT)))
                 else if (report.suggestions.isEmpty()) add(rh.gs(ApsStrings.autoisf_log_no_suggestions))
             }
         }
@@ -179,11 +191,23 @@ class AutoIsfLogAnalysisViewModel(
             )
         }
 
+        val parameters = result.values.map { item ->
+            val suggestion = item.param?.let { param -> report.suggestions.firstOrNull { it.param == param } }
+            val now = if (item.whole) df.to0Decimal(item.value) else item.param?.let { value(it, item.value) } ?: df.to2Decimal(item.value)
+            KeyValueRow(
+                rh.gs(item.title),
+                if (suggestion == null) now else rh.gs(ApsStrings.autoisf_log_change, now, value(suggestion.param, suggestion.suggested))
+            )
+        }
+
         return AutoIsfLogUiState(
+            hours = result.hours,
             slot = slot,
             hasResult = true,
             mealTitle = mealTitle,
             summary = summary,
+            parametersTitle = rh.gs(ApsStrings.autoisf_log_parameters_of, result.slotNow?.let { rh.gs(it.titleRef()) } ?: rh.gs(ApsStrings.autoisf_log_global_values)),
+            parameters = parameters,
             notes = notes,
             events = events,
             suggestions = suggestions

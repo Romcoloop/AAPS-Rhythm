@@ -6,10 +6,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -24,11 +26,13 @@ import app.aaps.core.ui.compose.dialogs.OkCancelDialog
 import app.aaps.core.ui.compose.stringResource
 import app.aaps.plugins.aps.ApsStrings
 import app.aaps.plugins.aps.compose.KeyValueRowItem
+import kotlin.math.roundToInt
 
 /** The "AutoISF log analysis" card on the AutoISF plugin screen. */
 @Composable
 fun AutoIsfLogAnalysisCard(
     state: AutoIsfLogUiState,
+    onHoursChange: (Int) -> Unit,
     onAnalyze: () -> Unit,
     onApplyClick: (AutoIsfSuggestionUi) -> Unit,
     onApplyConfirm: () -> Unit,
@@ -51,11 +55,39 @@ fun AutoIsfLogAnalysisCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                Button(onClick = onAnalyze, enabled = !state.running) {
-                    Text(stringResource(ApsStrings.autoisf_log_analyze))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(AapsSpacing.medium),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(ApsStrings.autoisf_log_hours, state.hours),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                AutoIsfLogAnalysis.HOURS_CHOICES.forEach { hours ->
+                    FilterChip(
+                        selected = state.hours == hours,
+                        onClick = { onHoursChange(hours) },
+                        enabled = !state.running,
+                        label = { Text(stringResource(ApsStrings.autoisf_log_hours, hours)) }
+                    )
+                }
+                Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.End) {
+                    Button(onClick = onAnalyze, enabled = !state.running) {
+                        Text(stringResource(ApsStrings.autoisf_log_analyze))
+                    }
                 }
             }
+            Slider(
+                value = state.hours.toFloat(),
+                onValueChange = { onHoursChange(it.roundToInt()) },
+                valueRange = 1f..AutoIsfLogAnalysis.MAX_HOURS.toFloat(),
+                steps = AutoIsfLogAnalysis.MAX_HOURS - 2,
+                enabled = !state.running,
+                modifier = Modifier.fillMaxWidth()
+            )
 
             if (state.running) {
                 Text(
@@ -81,6 +113,14 @@ fun AutoIsfLogAnalysisCard(
 
                 state.notes.forEach { note ->
                     Text(text = note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
+                }
+
+                if (state.parameters.isNotEmpty()) {
+                    SectionTitle(state.parametersTitle)
+                    state.parameters.forEachIndexed { index, row ->
+                        KeyValueRowItem(row)
+                        if (index < state.parameters.lastIndex) ItemDivider()
+                    }
                 }
 
                 if (state.events.isNotEmpty()) {

@@ -12,8 +12,8 @@ four places. Everything else is upstream AndroidAPS.
 | 5. Steps and activity (branch `autoisf-steps`) | AutoISF settings → Steps and activity | all 5 switches off = as upstream |
 
 Branches: `autoisf-custom` (1, 2, 4) → `autoisf-slots` (3, phase 1) → `autoisf-slots-2` (weekend,
-night) → `autoisf-analysis` (everything, plus 4 per slot) → `autoisf-steps` (5, steps). **Install
-builds from `autoisf-analysis`**, or from `autoisf-steps` if you want the step rules.
+night) → `autoisf-analysis` (everything, plus 4: the last hours) → `autoisf-steps` (5, steps). **Install
+builds from `autoisf-steps`**: it has everything. `autoisf-analysis` is the same without the step rules.
 Build: GitHub Actions workflow "AutoISF APK" (phone and wear APK; `runTests = true` runs the APS unit
 tests first).
 
@@ -141,46 +141,48 @@ The first word after `slot:` is the slot (`Breakfast`, `Lunch`, `Dinner`, `Break
 ## 4. The tuning card: AutoISF log analysis
 
 The card on the AutoISF plugin screen reads the log files on the phone (`AndroidAPS.log` and the
-zipped older ones) and shows what AutoISF did in **the last meal**. It never changes a value by
-itself.
+zipped older ones) and shows what AutoISF did in **the last hours**, whatever happened in them. It
+never changes a value by itself.
 
 ### 4.1 Controls
 
-One button: **Analyze last meal**. There is no choice of day, period or slot.
-
-- **The last meal** is the last meal slot (breakfast, lunch or dinner, weekday or weekend) whose meal
-  time plus 3 hours are over. The log of the last 3 days is read. A meal that is still going on is
-  skipped. The night slot is not a meal and is not analyzed.
-- The tail of a meal ends at the start of the next meal window of the same kind of day, so the rise
-  after lunch does not count for the breakfast.
-- A meal whose runs name no slot ran with the global values (the slots were off). It is shown, but it
-  gets no suggestion.
-- A meal counts for a slot only when the log lines of that day name the slot, so a weekday lunch
-  window on a Saturday is not mixed into the weekday lunch.
-- Over means: the meal time ends at 14:00, the tail ends at 17:00, you can analyze after 17:00.
-- The result stays on screen until you press the button again. **Apply** writes to the value of the
-  slot of this meal. A slot that is switched off gets no suggestion.
+- **Hours:** a slider from 1 to 24 hours, and two quick buttons **3 h** and **6 h**. You do not type
+  anything. The label shows the chosen hours. Changing it clears the result on screen.
+- **Analyze** runs it.
+- The time looked at is the chosen hours before now. There are no meal times, no choice of a slot and
+  no search for a meal: simply the last hours, with everything in them.
+- **The slot:** if all runs of these hours were run with the values of one slot (the log lines say
+  `AutoISF slot: Lunch`, ...), the card knows that slot, and **Apply** writes to it. If the loop used
+  more than one set of values (two slots, a slot and the global values) there is **no suggestion**,
+  because there is no single setting to compare with. The same when the runs have no slot line (the
+  slots were off, or an older build) and when the slot is switched off now.
+- The result stays on screen until you change the hours or press Analyze again.
 
 ### 4.2 What it shows
 
-The title says which meal it is, for example *Lunch slot, 2.11., 12:00 – 18:00*.
+The title says which slot it is (or *Last 6 h* when there is no single slot) and from when to when.
 
-**Facts of the meal:** the peak (BG, time, how far above target), the minutes to the peak, minutes
-above target +2 and +4 mmol/l, minutes below 3.9, BG above target at the end, SMB count and units,
-how often `autoISF_max` cut the factor, how often the SMB was as big as maxBolus allowed, the factor
-that drove ISF most.
+**Facts:** the peak (BG, time, how far above target), minutes above target +2 and +4 mmol/l, minutes
+below 3.9, BG above target at the end, SMB count and units, how often `autoISF_max` cut the factor,
+how often the SMB was as big as maxBolus allowed, the factor that drove ISF most.
 
-**Events:** every SMB of the meal that was followed by a low (below 3.9) within 3 hours, or by a
+**Values in use now:** all 15 AutoISF and SMB delivery numbers the loop uses now (the values of the
+slot of the last run, or the global ones). Where the rules suggest a change, the line shows it:
+`1.60 → 1.50`.
+
+**Events:** every SMB in these hours that was followed by a low (below 3.9) within 3 hours, or by a
 predicted low that stopped SMBs (`minGuardBG`), with the factor that drove that SMB.
 
-A meal with a temp target, or one that the log does not cover completely (a gap in the log), is
-shown with a note, but it gets **no suggestion**.
+If there are less than 6 loop runs in the chosen hours, the card says so. If the log does not cover
+all of the time (the loop stopped, the log began late) or a temp target was active, the facts are
+shown with a note, but there is **no suggestion**.
 
 ### 4.3 How a suggestion is made
 
-Rules, no model. The same rules as before, but they now see one meal only. Nothing is suggested from
-less than 3 hours of runs with the same settings, and a change of a setting inside the meal starts a
-new period. At most **one suggestion** is shown, the strongest one.
+Rules, no model, and they see only the chosen hours. Nothing is suggested from less than 2 hours of
+runs with the same settings, and a change of a setting inside that time starts a new period. Each
+suggestion has its own **Apply** button. They come from the same few events, so apply **one at a
+time** and watch.
 
 *Too much insulin* – when there were at least 2 lows after SMBs, or more than 4 % of the time below
 3.9, or enough predicted lows: look at the SMBs before the lows. If at least half of them …
@@ -202,17 +204,19 @@ above 10 mmol/l, and at least 24 runs high with the prediction still above targe
 | else bg_ISF drove them in ≥ 30 % | `higher_ISFrange_weight` × 1.1 |
 
 Every suggestion names the number of events behind it, the value before and after, and one reason.
-**Apply** asks first (the dialog says that the suggestion comes from one meal), writes the value, and
-refuses if the value changed meanwhile. Values are clamped to the limits of the setting.
+**Apply** asks first (the dialog says that the suggestion comes from a few hours only), writes the
+value, and refuses if the value changed meanwhile. Values are clamped to the limits of the setting.
 
 ### 4.4 How to tune with it
 
-1. One meal is a sample of one. A meal can go wrong because of the carbs, a walk, a late bolus or a
-   sensor. Do not change a value because of one bad meal. Look at the same slot on the next days
-   (press the button after each meal) and change something only when the same thing repeats.
-2. Apply at most one suggestion per slot, then watch the next meals.
-3. Lows always win over highs: a slot with lows gets less insulin first, even when it also has highs.
-4. There are no statistics over many meals, no whole-day view and no history of the changes. Write
+1. A few hours are a sample of one. A meal can go wrong because of the carbs, a walk, a late bolus or
+   a sensor. Do not change a value because of one bad time. Look at the same part of the day on the
+   next days and change something only when the same thing repeats.
+2. Choose the hours so that they fit one slot: for a lunch slot of 11:30–14:00 look at 3 hours at
+   about 14:30. A longer time mixes slots, and then there is no suggestion.
+3. Apply one suggestion, then watch the next days.
+4. Lows always win over highs: a slot with lows gets less insulin first, even when it also has highs.
+5. There are no statistics over many days, no whole-day view and no history of the changes. Write
    down what you changed (the log also has a line for each Apply).
 
 ## 5. Starting values
@@ -275,7 +279,7 @@ Starting values for the slots, until the analysis says otherwise:
   The three weekday slots keep the keys from phase 1, so an update needs no migration.
 - `logAnalysis/AutoIsfLogParser.kt` – one run per `Result: RT(...)` line, settings from the
   `OapsProfileAutoIsf(...)` line. `AutoIsfLogAnalyzer.kt` – statistics, events and the rule table of
-  4.3. `AutoIsfMealAnalyzer.kt` – one meal. `AutoIsfLogAnalysis.kt` – the analysis of the last meal and
+  4.3. `AutoIsfRecentAnalyzer.kt` – the numbers of the last hours. `AutoIsfLogAnalysis.kt` – the analysis and
   "Apply".
 - The unit tests of the APS module run in the "AutoISF APK" workflow with `runTests = true`. The
   preference schema snapshot (`app/src/testFull/resources/prefs-schema.txt`) is kept by hand and

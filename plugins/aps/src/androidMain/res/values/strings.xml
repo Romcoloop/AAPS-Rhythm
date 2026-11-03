@@ -140,13 +140,14 @@
 
     <!--    autoISF log analysis -->
     <string name="autoisf_log_analysis">AutoISF log analysis</string>
-    <string name="autoisf_log_analysis_info">Looks at the last meal that is over (meal time + 3 h) in the AAPS log and shows what AutoISF did. The suggestion is careful, but it comes from one meal only and it is just a help: you decide. Change one setting at a time and watch the next meals.</string>
-    <string name="autoisf_log_analyze">Analyze last meal</string>
+    <string name="autoisf_log_analysis_info">Looks at the last hours you choose (1 to 24, slide or tap 3 h or 6 h) in the AAPS log, whatever happened in them, and shows what AutoISF did and the values it used. A suggestion is made only when all runs used the values of one slot. It is careful, but it comes from a few hours only and it is just a help: you decide.</string>
+    <string name="autoisf_log_analyze">Analyze</string>
+    <string name="autoisf_log_hours" comment="The number of hours that are analyzed, on a button and as a label. %1$d=number of hours. Example: 3 h">%1$d h</string>
     <string name="autoisf_log_running">Reading the logs…</string>
     <string name="autoisf_log_read_error">The log could not be read: %1$s</string>
     <string name="autoisf_log_smbs">SMBs</string>
     <string name="autoisf_log_smbs_value" comment="%1$d=number of SMBs, %2$s=insulin, already formatted. Example: 42 (12.35 U)">%1$d (%2$s U)</string>
-    <string name="autoisf_log_not_enough_data" comment="%1$s=hours analyzed, %2$s=hours needed, both already formatted with unit. Example: 0.42 h, 3.00 h">Only %1$s of loop runs with the same settings in this meal. Suggestions need at least %2$s.</string>
+    <string name="autoisf_log_not_enough_data" comment="%1$s=hours analyzed, %2$s=hours needed, both already formatted with unit. Example: 0.42 h, 2.00 h">Only %1$s of loop runs with the same settings in this time. Suggestions need at least %2$s.</string>
     <string name="autoisf_log_settings_changed" comment="%1$s=date and time of the change">AutoISF settings were changed at %1$s. Only the time after this change is used.</string>
     <string name="autoisf_log_events">SMBs before a low</string>
     <string name="autoisf_log_event_low" comment="%1$s=time of the SMB, %2$s=SMB in U, %3$s=BG at the SMB with unit, %4$s=ISF factor, %5$s=which factor drove it, %6$s=lowest BG with unit, %7$s=time of the low. Example: 14:09 SMB 0.95 U at 9.7 mmol/l, ISF ×1.31 (bg_ISF) → low 3.6 mmol/l at 16:20">%1$s SMB %2$s U at %3$s, ISF ×%4$s (%5$s) → low %6$s at %7$s</string>
@@ -154,33 +155,35 @@
     <string name="autoisf_log_driver_max">autoISF_max limit</string>
     <string name="autoisf_log_driver_none">no factor</string>
     <string name="autoisf_log_suggestions">Suggestions</string>
-    <string name="autoisf_log_no_suggestions">No change suggested for this meal.</string>
+    <string name="autoisf_log_no_suggestions">No change suggested for this time.</string>
     <string name="autoisf_log_change" comment="%1$s=current value, %2$s=suggested value. Example: 1.60 → 1.50">%1$s → %2$s</string>
     <string name="autoisf_log_reason_max_limited">%1$d of %2$d SMBs before a low (or a predicted low) were cut by autoISF_max. A lower limit gives smaller SMBs in this case.</string>
     <string name="autoisf_log_reason_acce">%1$d of %2$d SMBs before a low (or a predicted low) were driven by acce_ISF: BG rose fast, but the rise did not go on.</string>
     <string name="autoisf_log_reason_bg">%1$d of %2$d SMBs before a low (or a predicted low) were driven by bg_ISF: high BG alone made ISF stronger.</string>
     <string name="autoisf_log_reason_ratio">%1$d of %2$d SMBs before a low (or a predicted low) used the maximum SMB delivery ratio.</string>
     <string name="autoisf_log_reason_max_bolus">%1$d of %2$d SMBs before a low (or a predicted low) were as big as maxBolus allowed. smb_max_range_extension makes maxBolus bigger.</string>
-    <string name="autoisf_log_reason_highs_max">No lows in this meal. In %1$d of %2$d high runs autoISF_max cut the factor.</string>
-    <string name="autoisf_log_reason_highs_bg">No lows in this meal. In %1$d of %2$d high runs bg_ISF was the strongest factor.</string>
+    <string name="autoisf_log_reason_highs_max">No lows in this time. In %1$d of %2$d high runs autoISF_max cut the factor.</string>
+    <string name="autoisf_log_reason_highs_bg">No lows in this time. In %1$d of %2$d high runs bg_ISF was the strongest factor.</string>
     <string name="autoisf_log_apply">Apply</string>
     <string name="autoisf_log_applied">Applied</string>
     <string name="autoisf_log_saved">Saved. Watch the next meals before you change more.</string>
-    <string name="autoisf_log_apply_confirm_slot" comment="%1$s=name of the setting, %2$s=current value, %3$s=new value, %4$s=name of the meal slot. Example: Change autoISF max from 1.60 to 1.70 in Lunch slot?">Change %1$s from %2$s to %3$s in %4$s? The suggestion comes from one meal. The loop will use the new value at the next run inside this meal time.</string>
+    <string name="autoisf_log_apply_confirm_slot" comment="%1$s=name of the setting, %2$s=current value, %3$s=new value, %4$s=name of the meal slot. Example: Change autoISF max from 1.60 to 1.70 in Lunch slot?">Change %1$s from %2$s to %3$s in %4$s? The suggestion comes from a few hours only. The loop will use the new value at the next run inside this slot time.</string>
     <string name="autoisf_log_meal_peak">Peak</string>
-    <string name="autoisf_log_meal_time_to_peak">Time to peak</string>
     <string name="autoisf_log_meal_above" comment="%1$s=how far above target, with sign, in the user's BG unit. Example: Time above target +2.0">Time above target %1$s</string>
     <string name="autoisf_log_meal_end">BG above target at the end</string>
     <string name="autoisf_log_meal_max_limited">Runs cut by autoISF_max</string>
     <string name="autoisf_log_meal_smb_at_max">SMBs as big as maxBolus</string>
     <string name="autoisf_log_meal_driver">Strongest factor</string>
-    <string name="autoisf_log_meal_title" comment="%1$s=name of the meal slot, %2$s=date, %3$s=start time, %4$s=end time. Example: Lunch slot, 2.11., 12:00 – 18:00">%1$s, %2$s, %3$s – %4$s</string>
-    <string name="autoisf_log_no_meal" comment="%1$d=number of days. Example: 3">No finished meal found in the log of the last %1$d days. A meal is finished when its meal time plus 3 hours are over. Check the meal times in the settings.</string>
+    <string name="autoisf_log_meal_title" comment="%1$s=name of the slot or Last 3 hours, %2$s=date, %3$s=time of the first run, %4$s=time of the last run. Example: Lunch slot, 3.11., 14:00 – 17:00">%1$s, %2$s, %3$s – %4$s</string>
+    <string name="autoisf_log_no_recent_runs" comment="%1$d=number of hours. Example: 3">The log has too few loop runs in the last %1$d hours. Is the loop running?</string>
     <string name="autoisf_log_meal_peak_value" comment="%1$s=peak BG with unit, %2$s=time of the peak, %3$s=how far above target, with sign. Example: 12.4 mmol/l at 13:20 (+7.0)">%1$s at %2$s (%3$s)</string>
     <string name="autoisf_log_meal_low_time" comment="%1$s=the low limit with unit. Example: Time under 3.9 mmol/l">Time under %1$s</string>
-    <string name="autoisf_log_meal_temp_target">A temp target was active in this meal, so no suggestion is made.</string>
-    <string name="autoisf_log_meal_incomplete">The log does not cover all of this meal, so no suggestion is made.</string>
-    <string name="autoisf_log_meal_global">No run of this meal names a slot: the loop used the global values then (the meal slots were off). A suggestion for the slot would change something that took no part, so there is none.</string>
+    <string name="autoisf_log_meal_temp_target">A temp target was active in this time, so no suggestion is made.</string>
+    <string name="autoisf_log_meal_incomplete">The log does not cover all of this time, so no suggestion is made.</string>
+    <string name="autoisf_log_global_values">Global values</string>
+    <string name="autoisf_log_title_recent" comment="%1$d=number of hours. Example: Last 3 h">Last %1$d h</string>
+    <string name="autoisf_log_parameters_of" comment="%1$s=the slot in use now, or Global values. Example: Values in use now: Lunch slot">Values in use now: %1$s</string>
+    <string name="autoisf_log_mixed_values">In this time the loop used more than one set of values (several slots, or the global values), so there is no suggestion.</string>
     <string name="autoisf_log_slots_off">This slot is off (meal slot settings or separate weekend slots), so the loop does not use its values. Switch them on in the AutoISF settings to get suggestions for this slot.</string>
     <string name="autoisf_log_changed_meanwhile">This setting was changed after the analysis. Nothing was saved. Run the analysis again.</string>
 

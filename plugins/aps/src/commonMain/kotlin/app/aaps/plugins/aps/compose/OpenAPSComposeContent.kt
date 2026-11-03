@@ -54,6 +54,7 @@ class OpenAPSComposeContent(
                 {
                     AutoIsfLogAnalysisCard(
                         state = logState.value,
+                        onHoursChange = logViewModel::onHoursChange,
                         onAnalyze = logViewModel::onAnalyze,
                         onApplyClick = logViewModel::onApplyClick,
                         onApplyConfirm = logViewModel::onApplyConfirm,
