@@ -130,39 +130,41 @@ znamená, že bol zapnutý „Holiday or vacation“).
 ## 4. Ladiaca karta: AutoISF log analysis
 
 Karta na obrazovke pluginu AutoISF číta log súbory v telefóne (`AndroidAPS.log` a staršie
-zazipované) a ukazuje, čo AutoISF robil. Sama nikdy žiadnu hodnotu nemení.
+zazipované) a ukazuje, čo AutoISF robil v **poslednom jedle**. Sama nikdy žiadnu hodnotu nemení.
 
 ### 4.1 Ovládanie
 
-- **Obdobie**: 1 / 3 / 7 dní. Víkendový slot ponúka namiesto toho 14 / 28 dní, lebo vidí len dve
-  jedlá za týždeň.
-- **Slot**: *Všetko* alebo jeden zo siedmich slotov.
-  - *Všetko* = celý deň, globálne hodnoty. „Použiť“ zapisuje do globálnej hodnoty.
-  - *Jeden slot* = len jedlá toho slotu: behy jeho okna plus 3 hodiny po ňom, jedno jedlo za deň.
-    Jedlo sa počíta do slotu, len keď ho riadky logu z toho dňa menujú – raňajkové okno v sobotu sa
-    teda nepomieša do pracovných raňajok. „Použiť“ zapisuje do hodnoty toho slotu. Vypnutý slot
-    návrhy nedostane.
-- **Analyze** to spustí. Výsledok ostáva na obrazovke, kým nezmeníš slot.
+Jedno tlačidlo: **Analyze last meal**. Nie je tu výber dňa, obdobia ani slotu.
+
+- **Posledné jedlo** je posledný slot jedla (raňajky, obed alebo večera, pracovný deň alebo víkend),
+  ktorému skončil čas jedla plus 3 hodiny. Číta sa log z posledných 3 dní. Jedlo, ktoré ešte trvá,
+  sa preskočí. Nočný slot nie je jedlo a neanalyzuje sa.
+- Jedlo sa počíta do slotu, len keď ho riadky logu z toho dňa menujú – obedové okno v sobotu sa
+  teda nepomieša do pracovného obeda.
+- Skončené znamená: čas jedla končí o 14:00, dozvuk o 17:00, analyzovať môžeš po 17:00.
+- Výsledok ostáva na obrazovke, kým tlačidlo nestlačíš znova. **Použiť** zapisuje do hodnoty slotu
+  tohto jedla. Vypnutý slot návrh nedostane.
 
 ### 4.2 Čo ukazuje
 
-**Súhrn** (celé obdobie alebo jedlá slotu): pokryté hodiny, počet behov, čas pod 3,0 / pod 3,9 /
-v rozsahu 3,9–10 / nad 10 mmol/l, počet a jednotky SMB, ako často `autoISF_max` orezal faktor a ako
-často bol SMB delivery ratio na maxime, ktorý faktor najčastejšie riadil ISF.
+Nadpis povie, o ktoré jedlo ide, napríklad *Lunch slot, 2.11., 12:00 – 18:00*.
 
-**Jedlá** (len pri jednom slote): za jedlo BG na začiatku, vrchol nad cieľom a minúty do vrcholu,
-minúty nad cieľom +2 a +4 mmol/l, minúty pod 3,9, BG na konci, počet a jednotky SMB, ako často
-`autoISF_max` orezal faktor, ako často bol SMB taký veľký, ako dovolil maxBolus, faktor, ktorý
-najčastejšie riadil ISF. Jedlo s temp targetom alebo také, ktoré log nepokrýva celé, sa zobrazí, ale
-do štatistiky sa nepoužije. Riadok štatistiky ukazuje **n = použité jedlá**.
+**Fakty o jedle:** vrchol (BG, čas, o koľko nad cieľom), minúty do vrcholu, minúty nad cieľom +2
+a +4 mmol/l, minúty pod 3,9, BG nad cieľom na konci, počet a jednotky SMB, ako často `autoISF_max`
+orezal faktor, ako často bol SMB taký veľký, ako dovolil maxBolus, faktor, ktorý najčastejšie riadil
+ISF.
 
-**Udalosti**: každý SMB, po ktorom do 3 hodín prišla hypo (pod 3,9) alebo predikovaná hypo, ktorá
-zastavila SMB (`minGuardBG`), s faktorom, ktorý ten SMB riadil.
+**Udalosti:** každý SMB z jedla, po ktorom do 3 hodín prišla hypo (pod 3,9) alebo predikovaná hypo,
+ktorá zastavila SMB (`minGuardBG`), s faktorom, ktorý ten SMB riadil.
+
+Jedlo s temp targetom alebo také, ktoré log nepokrýva celé (diera v logu), sa zobrazí s poznámkou,
+ale **nedostane návrh**.
 
 ### 4.3 Ako vzniká návrh
 
-Pravidlá, žiadny model. Z menej než 12 hodín behov s rovnakými nastaveniami (6 hodín pri jednom
-slote) sa nenavrhne nič a zmena nastavenia začína nové obdobie.
+Pravidlá, žiadny model. Rovnaké pravidlá ako predtým, ale vidia už len jedno jedlo. Z menej než
+3 hodín behov s rovnakými nastaveniami sa nenavrhne nič a zmena nastavenia vnútri jedla začína nové
+obdobie. Ukáže sa najviac **jeden návrh**, ten najsilnejší.
 
 *Priveľa inzulínu* – keď boli aspoň 2 hypo po SMB, alebo viac než 4 % času pod 3,9, alebo dosť
 predikovaných hypo: pozrú sa SMB pred hypo. Ak aspoň polovica z nich …
@@ -183,18 +185,19 @@ a aspoň 24 behov vysoko s predikciou stále nad cieľom:
 | `autoISF_max` orezal faktor v ≥ 30 % týchto behov | `autoISF_max` + 0,1 |
 | inak ich v ≥ 30 % riadil bg_ISF | `higher_ISFrange_weight` × 1,1 |
 
-Každý návrh uvádza počet udalostí, hodnotu pred a po a jeden dôvod. **Použiť** zapíše po potvrdení
-a odmietne, ak sa hodnota medzitým zmenila. Hodnoty sú orezané na limity nastavenia.
+Každý návrh uvádza počet udalostí, hodnotu pred a po a jeden dôvod. **Použiť** sa najprv spýta
+(dialóg povie, že návrh je z jedného jedla), zapíše hodnotu a odmietne, ak sa hodnota medzitým
+zmenila. Hodnoty sú orezané na limity nastavenia.
 
 ### 4.4 Ako s tým ladiť
 
-1. Začni s *Všetko* za 7 dní: ukáže, či sú globálne hodnoty bezpečné (hypo), skôr než čokoľvek per
-   slot.
-2. Potom slot po slote, za 7 dní (víkend 14–28). Sleduj **n**: menej než asi 5 jedál nie je vzor.
-   Použi najviac jeden návrh na slot a počkaj na ďalšie jedlá.
+1. Jedno jedlo je vzorka jedna. Jedlo môže dopadnúť zle kvôli sacharidom, prechádzke, neskorému
+   bolusu alebo senzoru. Nemeň hodnotu kvôli jednému zlému jedlu. Pozri sa na ten istý slot aj
+   v ďalšie dni (tlačidlo stlač po každom jedle) a zmeň niečo, len keď sa to isté opakuje.
+2. Použi najviac jeden návrh na slot a sleduj ďalšie jedlá.
 3. Hypo vždy vyhrávajú nad hyper: slot s hypo dostane najprv menej inzulínu, aj keď má aj vysoké.
-4. Nočný slot je v zozname, ale zatiaľ sa hodnotí ako jedlo. Vlastné nočné metriky (minimum BG,
-   priebeh 23:00 → 03:00 → ráno, bazál v profile vs. hodnota AutoISF) sú ďalší krok.
+4. Nie sú tu štatistiky z viacerých jedál, pohľad na celý deň ani história zmien. Zapisuj si, čo
+   si zmenil (log má riadok aj pri každom Použiť).
 
 ## 5. Štartovacie hodnoty
 
@@ -257,7 +260,7 @@ maxSMBBasalMinutes 30, UAM 30, cieľ 6,2 mmol/l, ISF 2,27 mmol/l/U, CR 12 g/U.
   sloty majú kľúče z fázy 1, takže update nepotrebuje migráciu.
 - `logAnalysis/AutoIsfLogParser.kt` – jeden beh na riadok `Result: RT(...)`, nastavenia z riadku
   `OapsProfileAutoIsf(...)`. `AutoIsfLogAnalyzer.kt` – štatistiky, udalosti a tabuľka pravidiel
-  z 4.3. `AutoIsfMealAnalyzer.kt` – jedno jedlo. `AutoIsfLogAnalysis.kt` – analýza per slot
+  z 4.3. `AutoIsfMealAnalyzer.kt` – jedno jedlo. `AutoIsfLogAnalysis.kt` – analýza posledného jedla
   a „Použiť“.
 - Unit testy modulu APS bežia vo workflow „AutoISF APK“ s `runTests = true`. Snímka schémy
   preferencií (`app/src/testFull/resources/prefs-schema.txt`) sa udržiava ručne, zoradená.

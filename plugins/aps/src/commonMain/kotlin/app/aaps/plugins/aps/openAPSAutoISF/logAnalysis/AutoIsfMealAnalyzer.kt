@@ -41,12 +41,11 @@ data class AutoIsfMealEpisode(
     val smbAtMaxBolusPct: Double,
     /** The factor that drove ISF most often, over the runs with a factor above 1. */
     val dominantDriver: AutoIsfDriver,
-    /** A temp target was active in at least one run. Such a meal is not used for the statistics. */
+    /** A temp target was active in at least one run. Such a meal is not rated. */
     val hadTempTarget: Boolean,
     /**
      * The runs do not cover the whole meal time plus tail: the period began or the log ended in
-     * the middle of it (for example the meal is still going on). Shown, but not used for the
-     * statistics.
+     * the middle of it (for example the meal is still going on). Shown, but not rated.
      */
     val incomplete: Boolean
 ) {
@@ -55,27 +54,9 @@ data class AutoIsfMealEpisode(
     val endAboveTarget: Double get() = endBg - targetBg
     val hadLow: Boolean get() = minutesLow > 0
 
-    /** Counts for the statistics. */
+    /** Counts as a meal that can be rated: no temp target and the log covers it. */
     val used: Boolean get() = !hadTempTarget && !incomplete
 }
-
-/** Statistics over the used meals of one slot. */
-data class AutoIsfMealStats(
-    /** Meals used. */
-    val meals: Int,
-    /** Meals left out: a temp target was active, or the meal is incomplete. */
-    val excluded: Int,
-    val meanPeakAboveTarget: Double,
-    val medianMinutesToPeak: Int,
-    val meanMinutesAbove1: Double,
-    val meanMinutesAbove2: Double,
-    val mealsWithLow: Int,
-    val meanEndAboveTarget: Double,
-    val meanSmbUnits: Double,
-    val maxLimitedPct: Double,
-    val smbAtMaxBolusPct: Double,
-    val dominantDriver: AutoIsfDriver
-)
 
 /**
  * Splits the loop runs of a meal slot into meals (one per day) and works out what happened after
@@ -181,27 +162,6 @@ class AutoIsfMealAnalyzer(
             if (from != null) return from
         }
         return null
-    }
-
-    fun stats(episodes: List<AutoIsfMealEpisode>): AutoIsfMealStats {
-        val used = episodes.filter { it.used }
-        val n = used.size
-        fun mean(values: List<Double>) = if (values.isEmpty()) 0.0 else values.sum() / values.size
-        val drivers = used.map { it.dominantDriver }.filter { it != AutoIsfDriver.None }
-        return AutoIsfMealStats(
-            meals = n,
-            excluded = episodes.size - n,
-            meanPeakAboveTarget = mean(used.map { it.peakAboveTarget }),
-            medianMinutesToPeak = median(used.map { it.minutesToPeak.toDouble() })?.toInt() ?: 0,
-            meanMinutesAbove1 = mean(used.map { it.minutesAbove1.toDouble() }),
-            meanMinutesAbove2 = mean(used.map { it.minutesAbove2.toDouble() }),
-            mealsWithLow = used.count { it.hadLow },
-            meanEndAboveTarget = mean(used.map { it.endAboveTarget }),
-            meanSmbUnits = mean(used.map { it.smbUnits }),
-            maxLimitedPct = mean(used.map { it.maxLimitedPct }),
-            smbAtMaxBolusPct = mean(used.filter { it.smbCount > 0 }.map { it.smbAtMaxBolusPct }),
-            dominantDriver = drivers.groupingBy { it }.eachCount().maxByOrNull { it.value }?.key ?: AutoIsfDriver.None
-        )
     }
 
     private fun median(values: List<Double>): Double? {

@@ -2,13 +2,10 @@ package app.aaps.plugins.aps.openAPSAutoISF.logAnalysis
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -27,15 +24,11 @@ import app.aaps.core.ui.compose.dialogs.OkCancelDialog
 import app.aaps.core.ui.compose.stringResource
 import app.aaps.plugins.aps.ApsStrings
 import app.aaps.plugins.aps.compose.KeyValueRowItem
-import app.aaps.plugins.aps.openAPSAutoISF.AutoIsfSlots
 
 /** The "AutoISF log analysis" card on the AutoISF plugin screen. */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AutoIsfLogAnalysisCard(
     state: AutoIsfLogUiState,
-    onDaysChange: (Int) -> Unit,
-    onSlotChange: (AutoIsfSlots.Slot?) -> Unit,
     onAnalyze: () -> Unit,
     onApplyClick: (AutoIsfSuggestionUi) -> Unit,
     onApplyConfirm: () -> Unit,
@@ -58,43 +51,9 @@ fun AutoIsfLogAnalysisCard(
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(AapsSpacing.medium),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                AutoIsfLogAnalysis.dayChoices(state.slot).forEach { days ->
-                    FilterChip(
-                        selected = state.days == days,
-                        onClick = { onDaysChange(days) },
-                        enabled = !state.running,
-                        label = { Text(stringResource(ApsStrings.autoisf_log_days, days)) }
-                    )
-                }
-                Row(modifier = Modifier.weight(1f), horizontalArrangement = Arrangement.End) {
-                    Button(onClick = onAnalyze, enabled = !state.running) {
-                        Text(stringResource(ApsStrings.autoisf_log_analyze))
-                    }
-                }
-            }
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(AapsSpacing.medium),
-                verticalArrangement = Arrangement.spacedBy(AapsSpacing.small)
-            ) {
-                FilterChip(
-                    selected = state.slot == null,
-                    onClick = { onSlotChange(null) },
-                    enabled = !state.running,
-                    label = { Text(stringResource(ApsStrings.autoisf_slot_all)) }
-                )
-                AutoIsfSlots.Slot.entries.forEach { slot ->
-                    FilterChip(
-                        selected = state.slot == slot,
-                        onClick = { onSlotChange(slot) },
-                        enabled = !state.running,
-                        label = { Text(stringResource(slot.titleRef())) }
-                    )
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                Button(onClick = onAnalyze, enabled = !state.running) {
+                    Text(stringResource(ApsStrings.autoisf_log_analyze))
                 }
             }
 
@@ -112,31 +71,16 @@ fun AutoIsfLogAnalysisCard(
             }
 
             if (state.hasResult) {
-                if (state.summary.isNotEmpty()) {
-                    SectionTitle(stringResource(ApsStrings.autoisf_log_summary))
-                    state.summary.forEachIndexed { index, row ->
-                        KeyValueRowItem(row)
-                        if (index < state.summary.lastIndex) ItemDivider()
-                    }
+                if (state.mealTitle.isNotEmpty()) {
+                    SectionTitle(state.mealTitle)
                 }
-
-                if (state.meals.isNotEmpty()) {
-                    SectionTitle(stringResource(ApsStrings.autoisf_log_meals_section))
-                    state.meals.forEachIndexed { index, row ->
-                        KeyValueRowItem(row)
-                        if (index < state.meals.lastIndex) ItemDivider()
-                    }
+                state.summary.forEachIndexed { index, row ->
+                    KeyValueRowItem(row)
+                    if (index < state.summary.lastIndex) ItemDivider()
                 }
 
                 state.notes.forEach { note ->
                     Text(text = note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
-                }
-
-                if (state.mealLines.isNotEmpty()) {
-                    SectionTitle(stringResource(ApsStrings.autoisf_log_meal_lines))
-                    state.mealLines.forEach { line ->
-                        Text(text = line, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
-                    }
                 }
 
                 if (state.events.isNotEmpty()) {

@@ -83,8 +83,8 @@ class AutoIsfMealAnalyzerTest {
         assertEquals(22 * 60 * 60_000L, full.start)
         assertEquals(dayMillis + 115 * 60_000L, full.end)
         assertTrue(meals[2].incomplete)
-        assertEquals(1, analyzer.stats(meals).meals)
-        assertEquals(2, analyzer.stats(meals).excluded)
+        assertEquals(1, meals.count { it.used })
+        assertEquals(2, meals.count { !it.used })
     }
 
     @Test
@@ -148,18 +148,17 @@ class AutoIsfMealAnalyzerTest {
     }
 
     @Test
-    fun `temp target meals are left out of the statistics`() {
+    fun `a meal with a temp target is not rated`() {
         val runs = flatDay(0, 100.0) + flatDay(1, 100.0) + flatDay(2, 100.0)
         val lunchDay1 = dayMillis + 12 * 60 * 60_000L
         val changed = runs.map { if (it.timestamp == lunchDay1) run(it.timestamp, 100.0, tempTarget = true) else it }
         val meals = analyzer.episodes(changed, lunch, 180)
-        val stats = analyzer.stats(meals)
 
         assertEquals(3, meals.size)
-        assertEquals(2, stats.meals)
-        assertEquals(1, stats.excluded)
-        assertEquals(0.0, stats.meanPeakAboveTarget)
-        assertEquals(0, stats.mealsWithLow)
+        assertEquals(2, meals.count { it.used })
+        assertEquals(1, meals.count { it.hadTempTarget })
+        assertEquals(0.0, meals.first { it.used }.peakAboveTarget)
+        assertFalse(meals.first { it.used }.hadLow)
     }
 
     @Test
