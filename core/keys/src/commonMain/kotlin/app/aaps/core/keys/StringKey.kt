@@ -141,6 +141,7 @@ enum class StringKey(
         title = KeysStrings.pref_title_autoisf_meal_window_breakfast,
         summary = KeysStrings.pref_summary_autoisf_meal_window,
         defaultedBySM = true,
+        dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
         validator = StringValidator.regex("^\\s*([01]?[0-9]|2[0-3]):[0-5][0-9]\\s*-\\s*([01]?[0-9]|2[0-3]):[0-5][0-9]\\s*$", "Use HH:MM-HH:MM, for example 06:30-09:00"),
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -150,6 +151,7 @@ enum class StringKey(
         title = KeysStrings.pref_title_autoisf_meal_window_lunch,
         summary = KeysStrings.pref_summary_autoisf_meal_window,
         defaultedBySM = true,
+        dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
         validator = StringValidator.regex("^\\s*([01]?[0-9]|2[0-3]):[0-5][0-9]\\s*-\\s*([01]?[0-9]|2[0-3]):[0-5][0-9]\\s*$", "Use HH:MM-HH:MM, for example 06:30-09:00"),
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
@@ -159,6 +161,7 @@ enum class StringKey(
         title = KeysStrings.pref_title_autoisf_meal_window_dinner,
         summary = KeysStrings.pref_summary_autoisf_meal_window,
         defaultedBySM = true,
+        dependency = BooleanKey.ApsAutoIsfSlotsEnabled,
         validator = StringValidator.regex("^\\s*([01]?[0-9]|2[0-3]):[0-5][0-9]\\s*-\\s*([01]?[0-9]|2[0-3]):[0-5][0-9]\\s*$", "Use HH:MM-HH:MM, for example 06:30-09:00"),
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),

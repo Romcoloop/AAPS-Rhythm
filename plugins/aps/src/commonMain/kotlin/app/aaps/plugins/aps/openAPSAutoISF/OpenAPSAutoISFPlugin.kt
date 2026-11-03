@@ -988,24 +988,25 @@ open class OpenAPSAutoISFPlugin(
                     DoubleKey.ApsAutoIsfHighBgWeight,
                     DoubleKey.ApsAutoIsfPpWeight,
                     DoubleKey.ApsAutoIsfBgBlendWeight,
-                    StringKey.ApsAutoIsfMealWindowBreakfast,
-                    StringKey.ApsAutoIsfMealWindowLunch,
-                    StringKey.ApsAutoIsfMealWindowDinner,
                     DoubleKey.ApsAutoIsfDuraWeight,
                     IntKey.ApsAutoIsfIobThPercent
                 )
             ),
+            // All the times in one section, then one section with the values of every slot, in a fixed order.
             PreferenceSubScreenDef(
                 key = "auto_isf_slots",
                 title = ApsStrings.autoisf_slots_title,
                 summary = ApsStrings.autoisf_slots_summary,
                 items = listOf(
                     BooleanKey.ApsAutoIsfSlotsEnabled,
-                    StringKey.ApsAutoIsfMealWindowNight,
+                    StringKey.ApsAutoIsfMealWindowBreakfast,
+                    StringKey.ApsAutoIsfMealWindowLunch,
+                    StringKey.ApsAutoIsfMealWindowDinner,
                     BooleanKey.ApsAutoIsfWeekendSlotsEnabled,
                     StringKey.ApsAutoIsfMealWindowBreakfastWeekend,
                     StringKey.ApsAutoIsfMealWindowLunchWeekend,
                     StringKey.ApsAutoIsfMealWindowDinnerWeekend,
+                    StringKey.ApsAutoIsfMealWindowNight,
                     BooleanKey.ApsAutoIsfHolidayMode,
                     StringKey.ApsAutoIsfHolidayUntil,
                     ApsIntentKey.AutoIsfSlotsCopyGlobal.withClick { slots.copyGlobalToAllSlots() },
@@ -1013,17 +1014,17 @@ open class OpenAPSAutoISFPlugin(
                     ApsIntentKey.AutoIsfSlotsCopyWeekdayToWeekend.withClick { slots.copyWeekdayToWeekend() }
                 )
             ),
-            // The slot screens sit next to "Meal slot settings", not inside it: the settings UI renders
+            // The slot screens sit next to "Slot times", not inside it: the settings UI renders
             // only two levels (plugin screen -> section), a third level is not drawn at all.
             // Their keys hide the whole section while the switch is off (hideParentScreenIfHidden);
             // the weekend ones also while "Separate weekend slots" is off.
-            slotScreen("auto_isf_slot_breakfast", ApsStrings.autoisf_slot_breakfast, AutoIsfSlots.Slot.BREAKFAST),
-            slotScreen("auto_isf_slot_lunch", ApsStrings.autoisf_slot_lunch, AutoIsfSlots.Slot.LUNCH),
-            slotScreen("auto_isf_slot_dinner", ApsStrings.autoisf_slot_dinner, AutoIsfSlots.Slot.DINNER),
-            slotScreen("auto_isf_slot_night", ApsStrings.autoisf_slot_night, AutoIsfSlots.Slot.NIGHT),
-            slotScreen("auto_isf_slot_breakfast_weekend", ApsStrings.autoisf_slot_breakfast_weekend, AutoIsfSlots.Slot.BREAKFAST_WEEKEND),
-            slotScreen("auto_isf_slot_lunch_weekend", ApsStrings.autoisf_slot_lunch_weekend, AutoIsfSlots.Slot.LUNCH_WEEKEND),
-            slotScreen("auto_isf_slot_dinner_weekend", ApsStrings.autoisf_slot_dinner_weekend, AutoIsfSlots.Slot.DINNER_WEEKEND),
+            slotScreen("auto_isf_slot_breakfast", ApsStrings.autoisf_slot_values_breakfast, AutoIsfSlots.Slot.BREAKFAST),
+            slotScreen("auto_isf_slot_lunch", ApsStrings.autoisf_slot_values_lunch, AutoIsfSlots.Slot.LUNCH),
+            slotScreen("auto_isf_slot_dinner", ApsStrings.autoisf_slot_values_dinner, AutoIsfSlots.Slot.DINNER),
+            slotScreen("auto_isf_slot_breakfast_weekend", ApsStrings.autoisf_slot_values_breakfast_weekend, AutoIsfSlots.Slot.BREAKFAST_WEEKEND),
+            slotScreen("auto_isf_slot_lunch_weekend", ApsStrings.autoisf_slot_values_lunch_weekend, AutoIsfSlots.Slot.LUNCH_WEEKEND),
+            slotScreen("auto_isf_slot_dinner_weekend", ApsStrings.autoisf_slot_values_dinner_weekend, AutoIsfSlots.Slot.DINNER_WEEKEND),
+            slotScreen("auto_isf_slot_night", ApsStrings.autoisf_slot_values_night, AutoIsfSlots.Slot.NIGHT),
             PreferenceSubScreenDef(
                 key = "smb_delivery_settings",
                 title = ApsStrings.smb_delivery_settings_title,

@@ -7,7 +7,7 @@ miestach. Všetko ostatné je upstream AndroidAPS.
 |---|---|---|
 | 1. Blended BG pre bg_ISF | AutoISF settings → Blended BG ISF weight | váha 0,0 = ako upstream |
 | 2. Časy jedál (okná slotov jedál) | AutoISF settings | žiadny čas jedla = ako upstream |
-| 3. Sloty: vlastné hodnoty pre jedlo, víkend a noc | Meal slot settings + sekcie slotov | prepínač vypnutý = ako upstream |
+| 3. Sloty: vlastné hodnoty pre jedlo, víkend a noc | Slot times + Slot values (sekcie slotov) | prepínač vypnutý = ako upstream |
 | 4. AutoISF log analysis (ladiaca karta) | karta na obrazovke pluginu AutoISF | len číta; zapisuje po „Použiť“ |
 | 5. Kroky a aktivita (vetva `autoisf-steps`) | AutoISF settings → Steps and activity | všetkých 5 prepínačov vypnutých = ako upstream |
 
@@ -46,7 +46,7 @@ V logu sú riadky `bgBlend`. Opatrný štart je váha 0,1–0,2.
 
 ## 2. Časy jedál
 
-Tri okná v AutoISF settings: Breakfast / Lunch / Dinner time, zapísané ako `HH:MM-HH:MM`. Sú to okná
+Tri okná v Slot times: Weekday: breakfast / lunch / dinner time, zapísané ako `HH:MM-HH:MM`. Sú to okná
 pracovných slotov jedál (kapitola 3). V sobotu, nedeľu a v režime sviatok/dovolenka sa namiesto nich
 použijú víkendové časy jedál, ak sú zapnuté víkendové sloty.
 
@@ -65,9 +65,9 @@ Prepínače AutoISF (SMB, UAM, autosens, …) ostávajú globálne.
 
 | Slot | Platí | Okno sa nastavuje v |
 |---|---|---|
-| Raňajky, Obed, Večera | pondelok – piatok | AutoISF settings → Breakfast / Lunch / Dinner time |
-| Raňajky, Obed, Večera (víkend) | sobota, nedeľa, režim sviatok/dovolenka | Meal slot settings → … time (weekend) |
-| Noc | každý deň | Meal slot settings → Night time |
+| Raňajky, Obed, Večera | pondelok – piatok | Slot times → Weekday: breakfast / lunch / dinner time |
+| Raňajky, Obed, Večera (víkend) | sobota, nedeľa, režim sviatok/dovolenka | Slot times → Weekend: breakfast / lunch / dinner time |
+| Noc | každý deň | Slot times → Night time (every day) |
 
 - Slot sa vyberá **len podľa hodín**, raz na začiatku každého behu loopu. Zadanie sacharidov slot
   nemení.
@@ -87,26 +87,30 @@ Prepínače AutoISF (SMB, UAM, autosens, …) ostávajú globálne.
 
 ### 3.2 Kde sú nastavenia
 
-Všetko v nastaveniach pluginu OpenAPS AutoISF.
+Všetko v nastaveniach pluginu OpenAPS AutoISF, v tomto poradí:
 
-**Meal slot settings**:
+1. **AutoISF settings** a **SMB delivery settings**: globálne hodnoty. Žiadne časy.
+2. **Slot times**: jediné miesto pre všetky časy.
+   - Use meal slot settings
+   - Weekday: breakfast / lunch / dinner time
+   - Separate weekend slots
+   - Weekend: breakfast / lunch / dinner time – vidno, kým sú víkendové sloty zapnuté
+   - Night time (every day)
+   - Holiday or vacation a „Holiday or vacation ends on“ (`RRRR-MM-DD`). S dátumom sa prepínač sám
+     vypne deň po tom dátume. Bez dátumu ho vypínaš ručne.
+   - **Copy global values to the night slot** – zapíše globálne hodnoty len do **nočného slotu**.
+     Sloty jedál a čas noci sa nemenia. Dobrý začiatok pre noc: skopíruj, potom hodnoty ručne
+     zmiernite (kapitola 5).
+   - **Copy global values to all slots** – zapíše globálne hodnoty do **všetkých siedmich** slotov.
+     Hodnoty, ktoré už v slotoch boli, sa stratia. Dobré raz, úplne na začiatku.
+   - **Copy weekday slots to weekend** – zapíše hodnoty pracovných raňajok / obeda / večere do
+     víkendových slotov. Pracovné sloty sa nemenia. Okná sa nikdy nekopírujú.
+3. **Slot values**, sedem sekcií v pevnom poradí: *Breakfast (weekday)*, *Lunch (weekday)*,
+   *Dinner (weekday)*, *Breakfast (weekend)*, *Lunch (weekend)*, *Dinner (weekend)*, *Night (every
+   day)*. Každá má 15 hodnôt svojho slotu. Sekcia je skrytá, kým je jej prepínač vypnutý.
 
-- Use meal slot settings
-- Night time
-- Separate weekend slots
-- Breakfast / Lunch / Dinner time (weekend) – vidno, kým sú víkendové sloty zapnuté
-- Holiday or vacation a „Holiday or vacation ends on“ (`RRRR-MM-DD`). S dátumom sa prepínač sám vypne
-  deň po tom dátume. Bez dátumu ho vypínaš ručne.
-- **Copy global values to the night slot** – zapíše globálne hodnoty len do **nočného slotu**. Sloty
-  jedál a čas noci sa nemenia. Dobrý začiatok pre noc: skopíruj, potom hodnoty ručne zmiernite
-  (kapitola 5).
-- **Copy global values to all slots** – zapíše globálne hodnoty do **všetkých siedmich** slotov.
-  Hodnoty, ktoré už v slotoch boli, sa stratia. Dobré raz, úplne na začiatku.
-- **Copy weekday slots to weekend** – zapíše hodnoty pracovných raňajok / obeda / večere do
-  víkendových slotov. Pracovné sloty sa nemenia. Okná sa nikdy nekopírujú.
-
-**Breakfast slot, Lunch slot, Dinner slot, Night slot, … slot (weekend)**: 15 hodnôt každého slotu.
-Sekcia je skrytá, kým je jej prepínač vypnutý.
+Obrazovka nastavení má len dve úrovne (obrazovka pluginu, sekcia), preto sekcie idú za sebou v rade
+a nedajú sa vnoriť.
 
 ### 3.3 Prvé nastavenie v bezpečnom poradí
 
@@ -117,7 +121,7 @@ takmer bez AutoISF. Preto slot najprv **naplň** a až potom mu daj okno.
 2. Ak sú pracovné sloty ešte rovné globálnym hodnotám: **Copy global values to all slots**.
    Ak si pracovné sloty už ladil: **nestláčaj** ho. Použi **Copy weekday slots to weekend** a pre noc
    **Copy global values to the night slot** (potom noc zmiernite, hodnoty sú v kapitole 5).
-3. Nastav pracovné časy jedál (AutoISF settings), ak ešte nie sú.
+3. Nastav pracovné časy jedál (Slot times), ak ešte nie sú.
 4. Separate weekend slots → zapnúť, nastaviť víkendové časy, napríklad `07:00-10:00`, `12:00-15:00`,
    `18:00-21:00`.
 5. Night time, napríklad `23:00-05:30` – až keď má nočný slot hodnoty.

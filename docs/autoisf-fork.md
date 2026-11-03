@@ -7,7 +7,7 @@ four places. Everything else is upstream AndroidAPS.
 |---|---|---|
 | 1. Blended BG for bg_ISF | AutoISF settings → Blended BG ISF weight | weight 0.0 = as upstream |
 | 2. Meal times (the windows of the meal slots) | AutoISF settings | no meal time set = as upstream |
-| 3. Slots: own values per meal, weekend and night | Meal slot settings + slot sections | switch off = as upstream |
+| 3. Slots: own values per meal, weekend and night | Slot times + Slot values (slot sections) | switch off = as upstream |
 | 4. AutoISF log analysis (the tuning card) | card on the AutoISF plugin screen | reads only; writes on "Apply" |
 | 5. Steps and activity (branch `autoisf-steps`) | AutoISF settings → Steps and activity | all 5 switches off = as upstream |
 
@@ -45,7 +45,7 @@ The log shows it as `bgBlend` lines. A weight of 0.1–0.2 is a careful start.
 
 ## 2. Meal times
 
-Three windows in AutoISF settings: Breakfast / Lunch / Dinner time, written as `HH:MM-HH:MM`. They
+Three windows in Slot times: Weekday: breakfast / lunch / dinner time, written as `HH:MM-HH:MM`. They
 are the windows of the weekday meal slots (chapter 3). On Saturday, Sunday and in holiday mode the
 weekend meal times are used instead, when separate weekend slots are on.
 
@@ -64,9 +64,9 @@ all windows the global values. The on/off switches of AutoISF (SMB, UAM, autosen
 
 | Slot | Used on | Window set in |
 |---|---|---|
-| Breakfast, Lunch, Dinner | Monday to Friday | AutoISF settings → Breakfast / Lunch / Dinner time |
-| Breakfast, Lunch, Dinner (weekend) | Saturday, Sunday, holiday mode | Meal slot settings → … time (weekend) |
-| Night | every day | Meal slot settings → Night time |
+| Breakfast, Lunch, Dinner | Monday to Friday | Slot times → Weekday: breakfast / lunch / dinner time |
+| Breakfast, Lunch, Dinner (weekend) | Saturday, Sunday, holiday mode | Slot times → Weekend: breakfast / lunch / dinner time |
+| Night | every day | Slot times → Night time (every day) |
 
 - The slot is chosen **by the clock only**, once at the start of every loop run. Entering carbs does
   not change the slot.
@@ -86,26 +86,30 @@ all windows the global values. The on/off switches of AutoISF (SMB, UAM, autosen
 
 ### 3.2 Where the settings are
 
-All in the settings of the OpenAPS AutoISF plugin.
+All in the settings of the OpenAPS AutoISF plugin, in this order:
 
-**Meal slot settings**:
+1. **AutoISF settings** and **SMB delivery settings**: the global values. No times here.
+2. **Slot times**: the one place for every time.
+   - Use meal slot settings
+   - Weekday: breakfast / lunch / dinner time
+   - Separate weekend slots
+   - Weekend: breakfast / lunch / dinner time – shown while separate weekend slots are on
+   - Night time (every day)
+   - Holiday or vacation, and "Holiday or vacation ends on" (`YYYY-MM-DD`). With a date, the switch
+     turns itself off the day after that date. Without a date you switch it off by hand.
+   - **Copy global values to the night slot** – writes the global values into the **night slot
+     only**. The meal slots and the night time are not changed. A good start for the night: copy,
+     then make the values milder by hand (chapter 5).
+   - **Copy global values to all slots** – writes the global values into **all seven** slots. Values
+     already in the slots are lost. Good once, at the very start.
+   - **Copy weekday slots to weekend** – writes the weekday breakfast / lunch / dinner values into
+     the weekend slots. The weekday slots are not changed. Windows are never copied.
+3. **Slot values**, seven sections in a fixed order: *Breakfast (weekday)*, *Lunch (weekday)*,
+   *Dinner (weekday)*, *Breakfast (weekend)*, *Lunch (weekend)*, *Dinner (weekend)*, *Night (every
+   day)*. Each has the 15 values of its slot. A section is hidden while its switch is off.
 
-- Use meal slot settings
-- Night time
-- Separate weekend slots
-- Breakfast / Lunch / Dinner time (weekend) – shown while separate weekend slots are on
-- Holiday or vacation, and "Holiday or vacation ends on" (`YYYY-MM-DD`). With a date, the switch turns
-  itself off the day after that date. Without a date you switch it off by hand.
-- **Copy global values to the night slot** – writes the global values into the **night slot only**. The
-  meal slots and the night time are not changed. A good start for the night: copy, then make the
-  values milder by hand (chapter 5).
-- **Copy global values to all slots** – writes the global values into **all seven** slots. Values
-  already in the slots are lost. Good once, at the very start.
-- **Copy weekday slots to weekend** – writes the weekday breakfast / lunch / dinner values into the
-  weekend slots. The weekday slots are not changed. Windows are never copied.
-
-**Breakfast slot, Lunch slot, Dinner slot, Night slot, … slot (weekend)**: the 15 values of each slot.
-A section is hidden while its switch is off.
+The settings screen has only two levels (plugin screen, section), so the sections follow each other
+in a row; they cannot be nested.
 
 ### 3.3 First setup, in a safe order
 
@@ -117,7 +121,7 @@ almost without AutoISF. So fill a slot **before** you give it a window.
    If you have already tuned the weekday slots: **do not** press it. Use **Copy weekday slots to
    weekend** instead, and **Copy global values to the night slot** for the night (then make the
    night milder, chapter 5 has the values).
-3. Set the weekday meal times (AutoISF settings) if they are not set yet.
+3. Set the weekday meal times (Slot times) if they are not set yet.
 4. Separate weekend slots → on, set the weekend meal times, for example `07:00-10:00`, `12:00-15:00`,
    `18:00-21:00`.
 5. Night time, for example `23:00-05:30` – only once the Night slot has values.

@@ -115,8 +115,8 @@
     <string name="smb_delivery_settings_title">SMB delivery settings</string>
 
     <!--    autoISF meal slots -->
-    <string name="autoisf_slots_title">Meal slot settings</string>
-    <string name="autoisf_slots_summary">Own AutoISF and SMB delivery values for breakfast, lunch, dinner and night, on weekdays and on the weekend</string>
+    <string name="autoisf_slots_title">Slot times</string>
+    <string name="autoisf_slots_summary">All the times in one place: weekday meals, weekend meals and night, holiday mode and the copy buttons. The values of every slot are in the sections below, named Slot values</string>
     <string name="autoisf_slot_breakfast">Breakfast slot</string>
     <string name="autoisf_slot_lunch">Lunch slot</string>
     <string name="autoisf_slot_dinner">Dinner slot</string>
@@ -124,6 +124,13 @@
     <string name="autoisf_slot_breakfast_weekend">Breakfast slot (weekend)</string>
     <string name="autoisf_slot_lunch_weekend">Lunch slot (weekend)</string>
     <string name="autoisf_slot_dinner_weekend">Dinner slot (weekend)</string>
+    <string name="autoisf_slot_values_breakfast">Slot values: Breakfast (weekday)</string>
+    <string name="autoisf_slot_values_lunch">Slot values: Lunch (weekday)</string>
+    <string name="autoisf_slot_values_dinner">Slot values: Dinner (weekday)</string>
+    <string name="autoisf_slot_values_breakfast_weekend">Slot values: Breakfast (weekend)</string>
+    <string name="autoisf_slot_values_lunch_weekend">Slot values: Lunch (weekend)</string>
+    <string name="autoisf_slot_values_dinner_weekend">Slot values: Dinner (weekend)</string>
+    <string name="autoisf_slot_values_night">Slot values: Night (every day)</string>
     <string name="autoisf_steps_title">Steps and activity</string>
     <string name="autoisf_steps_summary">Count steps with the phone, and make dosing more careful during and after activity</string>
     <string name="permission_steps_title">Physical activity</string>
