@@ -40,7 +40,10 @@ class StepsActivityRulesTest {
         assertFalse(off.sportGuard)
         assertEquals(0, off.smbIntervalFloorMinutes)
         assertEquals(1.0, off.effortSmbFactor)
-        assertTrue(off.log.startsWith("steps 5m=400"))
+        assertTrue(off.log.startsWith("steps (phone) 5m=400"))
+        val fromWatch = walk.copy(source = StepSource.WATCH)
+        val watchRun = StepsActivityRules.decide(fromWatch, 100.0, 60.0, smbIntervalEnabled = false, afterglow = null, effort = null)
+        assertTrue(watchRun.log.startsWith("steps (watch) 5m=400"))
 
         val glow = ActivityAfterglow.Result(ActivityAfterglow.Level.GUARD, ActivityAfterglow.Phase.MOVING, 0.0, true, 0.0, "afterglow GUARD: moving")
         val on = StepsActivityRules.decide(walk, 100.0, 60.0, smbIntervalEnabled = true, afterglow = glow, effort = null)
