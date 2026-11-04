@@ -27,6 +27,9 @@ class DetermineBasalAutoISFTest : TestBaseWithProfile() {
 
     private val currentTime = 1656358822000L
 
+    /** Insulin activity (U per minute) at which the run of issue #5082 ends in a low temp and no SMB. */
+    private val lowTempActivity = 0.0105
+
     @BeforeEach
     fun setup() {
         sut = DetermineBasalAutoISF(profileUtil)
@@ -237,7 +240,7 @@ class DetermineBasalAutoISFTest : TestBaseWithProfile() {
      */
     @Test
     fun `a zero temp shorter than 30 minutes keeps only the basal that was not withheld`() {
-        val rT = runWithSmb()
+        val rT = runWithSmb(iobValue = 1.3, activityValue = lowTempActivity)
 
         assertThat(rT.reason.toString()).contains("30m low temp")
 
@@ -330,24 +333,17 @@ class DetermineBasalAutoISFTest : TestBaseWithProfile() {
         assertThat(spaced.reason.toString()).contains("Waiting")
     }
 
-    @Test
-    fun `zz diagnose SMB scenarios`() {
-        val table = StringBuilder("\nSCENARIOS iob/activity -> units, rate, duration, insulinReq\n")
-        for (iobValue in listOf(0.0, 0.3, 0.6, 1.0, 1.3)) {
-            for (activityValue in listOf(0.0, 0.002, 0.005, 0.0105)) {
-                val rT = runWithSmb(iobValue = iobValue, activityValue = activityValue)
-                table.append("SCEN iob=$iobValue act=$activityValue units=${rT.units} rate=${rT.rate} dur=${rT.duration} req=${rT.insulinReq} ev=${rT.eventualBG}\n")
-            }
-        }
-        throw AssertionError(table.toString())
-    }
-
-    /** BG high and rising so a bolus is wanted, with enough insulin acting that the worst case lands below target. */
+    /**
+     * BG 150 and rising. With the defaults nothing much is acting yet, so the loop wants an SMB (0.5 U,
+     * the largest SMB the profile allows) and a high temp (3.0 U/h, the safe maximum). The step rules
+     * are tested against this run. A larger [activityValue] (see [lowTempActivity]) lets the worst
+     * case land below target: then there is no SMB and a low temp.
+     */
     private fun runWithSmb(
         lastBolusAgeMinutes: Int = 60,
         steps: StepsActivity = StepsActivity.NONE,
-        iobValue: Double = 1.3,
-        activityValue: Double = 0.0105,
+        iobValue: Double = 1.0,
+        activityValue: Double = 0.0,
     ): RT {
         val iobs = Array(48) { i ->
             val time = currentTime + i * 5 * 60000L
