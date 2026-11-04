@@ -1044,6 +1044,11 @@ open class OpenAPSAutoISFPlugin(
                 items = listOf(
                     BooleanKey.ApsAutoIsfStepsPhoneSource,
                     BooleanKey.ApsAutoIsfStepsSportGuard,
+                    IntKey.ApsAutoIsfStepsMildSteps60,
+                    IntKey.ApsAutoIsfStepsGuardSteps30,
+                    IntKey.ApsAutoIsfStepsGuardSteps60,
+                    IntKey.ApsAutoIsfStepsLongSteps60,
+                    IntKey.ApsAutoIsfStepsLongSteps180,
                     BooleanKey.ApsAutoIsfStepsSmbInterval,
                     BooleanKey.ApsAutoIsfStepsEffortProtection,
                     BooleanKey.ApsAutoIsfStepsWakeGate,

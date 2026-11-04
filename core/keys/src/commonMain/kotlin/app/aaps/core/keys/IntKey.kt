@@ -468,6 +468,66 @@ enum class IntKey(
         unitType = UnitType.PERCENT,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
+    /** Steps in 60 minutes that start the mild level of [BooleanKey.ApsAutoIsfStepsSportGuard]. */
+    ApsAutoIsfStepsMildSteps60(
+        key = "autoISF_steps_mild_steps_60",
+        defaultValue = 2500,
+        min = 1000,
+        max = 5000,
+        title = KeysStrings.pref_title_autoisf_steps_mild_steps_60,
+        summary = KeysStrings.pref_summary_autoisf_steps_mild_steps_60,
+        defaultedBySM = true,
+        dependency = BooleanKey.ApsAutoIsfStepsSportGuard,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
+    /** Steps in 30 minutes that start the guard level of [BooleanKey.ApsAutoIsfStepsSportGuard]. */
+    ApsAutoIsfStepsGuardSteps30(
+        key = "autoISF_steps_guard_steps_30",
+        defaultValue = 2000,
+        min = 500,
+        max = 4000,
+        title = KeysStrings.pref_title_autoisf_steps_guard_steps_30,
+        summary = KeysStrings.pref_summary_autoisf_steps_guard_steps_30,
+        defaultedBySM = true,
+        dependency = BooleanKey.ApsAutoIsfStepsSportGuard,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
+    /** Steps in 60 minutes that start the guard level of [BooleanKey.ApsAutoIsfStepsSportGuard]. */
+    ApsAutoIsfStepsGuardSteps60(
+        key = "autoISF_steps_guard_steps_60",
+        defaultValue = 4000,
+        min = 1000,
+        max = 8000,
+        title = KeysStrings.pref_title_autoisf_steps_guard_steps_60,
+        summary = KeysStrings.pref_summary_autoisf_steps_guard_steps_60,
+        defaultedBySM = true,
+        dependency = BooleanKey.ApsAutoIsfStepsSportGuard,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
+    /** Steps in 60 minutes that start the long level of [BooleanKey.ApsAutoIsfStepsSportGuard]. */
+    ApsAutoIsfStepsLongSteps60(
+        key = "autoISF_steps_long_steps_60",
+        defaultValue = 6000,
+        min = 2000,
+        max = 12000,
+        title = KeysStrings.pref_title_autoisf_steps_long_steps_60,
+        summary = KeysStrings.pref_summary_autoisf_steps_long_steps_60,
+        defaultedBySM = true,
+        dependency = BooleanKey.ApsAutoIsfStepsSportGuard,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
+    /** Steps in 180 minutes that start the long level of [BooleanKey.ApsAutoIsfStepsSportGuard]. */
+    ApsAutoIsfStepsLongSteps180(
+        key = "autoISF_steps_long_steps_180",
+        defaultValue = 7000,
+        min = 2000,
+        max = 20000,
+        title = KeysStrings.pref_title_autoisf_steps_long_steps_180,
+        summary = KeysStrings.pref_summary_autoisf_steps_long_steps_180,
+        defaultedBySM = true,
+        dependency = BooleanKey.ApsAutoIsfStepsSportGuard,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
     /** Steps within one hour that count as "awake" for [BooleanKey.ApsAutoIsfStepsWakeGate]. */
     ApsAutoIsfStepsWakeSteps(
         key = "autoISF_steps_wake_steps",

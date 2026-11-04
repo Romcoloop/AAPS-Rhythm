@@ -105,7 +105,7 @@ object StepsActivityRules {
         val factor = minOf(effort?.smbFactor ?: 1.0, glowSmbFactor)
         val gateClosed = wakeGate?.blockSmb == true
         val parts = mutableListOf<String>()
-        parts.add("steps 5m=${w.steps5} 10m=${w.steps10} 30m=${w.steps30} 60m=${w.steps60} 180m=${w.steps180}")
+        parts.add("steps (${w.source.label}) 5m=${w.steps5} 10m=${w.steps10} 30m=${w.steps30} 60m=${w.steps60} 180m=${w.steps180}")
         if (afterglow != null && afterglow.active) parts.add(afterglow.log)
         if (floor > 0) parts.add("SMB interval at least ${floor}m")
         if (effort != null && effort.smbFactor < 1.0) parts.add("effort x${formatFactor(effort.smbFactor)} (${effort.reasons.joinToString(" ")})")

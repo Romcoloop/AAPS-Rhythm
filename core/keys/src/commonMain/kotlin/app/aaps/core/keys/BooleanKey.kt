@@ -222,7 +222,7 @@ enum class BooleanKey(
         visibility = AutoIsfVisibility.WEEKEND_SLOTS,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
-    /** Count steps with the phone's own step sensor and store them like a watch would. Needs the activity permission. */
+    /** On: the step rules use only the phone's own step sensor (stored like a watch would). Off: only the watch. Needs the activity permission. */
     ApsAutoIsfStepsPhoneSource(
         "autoISF_steps_phone_source",
         false,

@@ -205,6 +205,11 @@ autoISF_slot_night_openapsama_smb_max_range_extension|DoubleKey|true
 autoISF_slot_night_pp_ISF_weight|DoubleKey|true
 autoISF_slots_enabled|BooleanKey|true
 autoISF_steps_effort_protection|BooleanKey|true
+autoISF_steps_guard_steps_30|IntKey|true
+autoISF_steps_guard_steps_60|IntKey|true
+autoISF_steps_long_steps_180|IntKey|true
+autoISF_steps_long_steps_60|IntKey|true
+autoISF_steps_mild_steps_60|IntKey|true
 autoISF_steps_phone_source|BooleanKey|true
 autoISF_steps_smb_interval|BooleanKey|true
 autoISF_steps_sport_guard|BooleanKey|true

@@ -7,10 +7,12 @@ package app.aaps.plugins.aps.openAPSAutoISF.steps
  * The old guard let go at once when there were 0 steps in 5 minutes, so the dosing jumped back to
  * 100 %. Now the way back is a ramp. The size of the ramp follows how much the person walked.
  *
- * Levels (the steps are sums, see [StepWindows]):
- *  - [Level.MILD]:  2500 steps in 60 min.
- *  - [Level.GUARD]: 2000 steps in 30 min, 4000 in 60 min, or a burst (400 in 5 min and 800 in 10 min).
- *  - [Level.LONG]:  6000 steps in 60 min, or 7000 in 180 min.
+ * Levels (the steps are sums, see [StepWindows]). The numbers are [Limits], set in the settings; the
+ * defaults are in brackets:
+ *  - [Level.MILD]:  `mild60` steps in 60 min (2500).
+ *  - [Level.GUARD]: `guard30` steps in 30 min (2000), `guard60` in 60 min (4000), or a burst
+ *    (400 in 5 min and 800 in 10 min, fixed).
+ *  - [Level.LONG]:  `long60` steps in 60 min (6000), or `long180` in 180 min (7000).
  *
  * Phases:
  *  - [Phase.MOVING]: temp basal 0 %. SMB 0 (MILD: SMB x0.8).
@@ -31,20 +33,30 @@ object ActivityAfterglow {
 
     enum class Phase { NONE, MOVING, HOLD, TAPER }
 
-    /** Steps in 60 minutes for [Level.MILD]. */
-    const val MILD_STEPS_60 = 2500
+    /**
+     * The step sums that start each level. The levels are checked from the highest down, so a limit that
+     * is set below a lower level only skips that lower level.
+     *
+     * [DEFAULT] holds the values of the settings keys; a test keeps the two in step.
+     */
+    data class Limits(
+        /** Steps in 60 minutes for [Level.MILD]. */
+        val mild60: Int,
+        /** Steps in 30 minutes for [Level.GUARD]. */
+        val guard30: Int,
+        /** Steps in 60 minutes for [Level.GUARD]. */
+        val guard60: Int,
+        /** Steps in 60 minutes for [Level.LONG]. */
+        val long60: Int,
+        /** Steps in 180 minutes for [Level.LONG]. */
+        val long180: Int,
+    ) {
 
-    /** Steps in 30 minutes for [Level.GUARD]. */
-    const val GUARD_STEPS_30 = 2000
+        companion object {
 
-    /** Steps in 60 minutes for [Level.GUARD]. */
-    const val GUARD_STEPS_60 = 4000
-
-    /** Steps in 60 minutes for [Level.LONG]. */
-    const val LONG_STEPS_60 = 6000
-
-    /** Steps in 180 minutes for [Level.LONG]. */
-    const val LONG_STEPS_180 = 7000
+            val DEFAULT = Limits(mild60 = 2500, guard30 = 2000, guard60 = 4000, long60 = 6000, long180 = 7000)
+        }
+    }
 
     /** Steps in the last 5 minutes that count as "moving now". */
     const val MOVING_STEPS_5 = StepsActivityRules.MOVING_STEPS_5
@@ -107,19 +119,20 @@ object ActivityAfterglow {
     }
 
     /** The level the step sums show right now. */
-    fun classify(w: StepWindows): Level = when {
-        w.steps60 >= LONG_STEPS_60 || w.steps180 >= LONG_STEPS_180                                                        -> Level.LONG
-        w.steps30 >= GUARD_STEPS_30 || w.steps60 >= GUARD_STEPS_60 ||
+    fun classify(w: StepWindows, limits: Limits = Limits.DEFAULT): Level = when {
+        w.steps60 >= limits.long60 || w.steps180 >= limits.long180                                                        -> Level.LONG
+        w.steps30 >= limits.guard30 || w.steps60 >= limits.guard60 ||
             (w.steps5 >= StepsActivityRules.BURST_STEPS_5 && w.steps10 >= StepsActivityRules.BURST_STEPS_10)                -> Level.GUARD
-        w.steps60 >= MILD_STEPS_60                                                                                         -> Level.MILD
+        w.steps60 >= limits.mild60                                                                                         -> Level.MILD
         else                                                                                                               -> Level.NONE
     }
 
     /**
      * @param bg glucose in mg/dl
      * @param delta glucose change in mg/dl per 5 minutes
+     * @param limits the step sums that start the levels
      */
-    fun assess(w: StepWindows, bg: Double, delta: Double, nowMs: Long, prior: Memory): Pair<Result, Memory> {
+    fun assess(w: StepWindows, bg: Double, delta: Double, nowMs: Long, prior: Memory, limits: Limits = Limits.DEFAULT): Pair<Result, Memory> {
         val priorAgeMin = if (prior.lastMovingMs > 0L) ((nowMs - prior.lastMovingMs) / 60_000.0).coerceAtLeast(0.0) else Double.MAX_VALUE
         val priorLive = prior.level != Level.NONE && priorAgeMin <= holdMin(prior.level) + taperMin(prior.level)
 
@@ -127,7 +140,7 @@ object ActivityAfterglow {
         // the effort belief) and 100 steps in the last 5 minutes. A few steps at home do not start it,
         // also when the 60 and 180 minute sums are still high from a walk long ago. A new start needs
         // a level from the sums as well.
-        val level = classify(w)
+        val level = classify(w, limits)
         val moving = w.steps5 >= MOVING_STEPS_5 &&
             w.rate15 >= EffortActivityBelief.ACTIVE_STEPS_PER_MIN &&
             (priorLive || level != Level.NONE)

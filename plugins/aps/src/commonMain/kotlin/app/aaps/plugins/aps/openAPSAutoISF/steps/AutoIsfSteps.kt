@@ -15,9 +15,9 @@ import app.aaps.core.keys.interfaces.Preferences
  * - [tick] runs once a minute while the plugin is on. It starts or stops the phone step counter
  *   after the switch and stores the counted steps, in the same six-row form the watch uses, so the
  *   automation trigger "Steps count" and the graph see them too.
- * - [decide] is called once per loop run. It reads the newest steps (phone first, then the database,
- *   so a watch works as well), runs the sport guard ([ActivityAfterglow]), the effort belief and the
- *   morning wake gate and puts the rules together.
+ * - [decide] is called once per loop run. It reads the newest steps from ONE source, picked by the
+ *   switch (on = the phone, off = the watch; see [windows]), runs the sport guard
+ *   ([ActivityAfterglow]), the effort belief and the morning wake gate and puts the rules together.
  *
  * Every rule has its own switch and all are off by default. Off = the run is the same as upstream.
  */
@@ -68,25 +68,41 @@ class AutoIsfSteps(
     }
 
     /**
-     * The newest steps for this run: the phone's own count when it is on and has data, otherwise the
-     * newest database row of the last [MAX_AGE_MS] (a watch, or the rows this class stored). Null
-     * when there is nothing recent enough.
+     * The newest steps for this run, from the ONE source the switch picks. There is no fallback to
+     * the other source, so the numbers always come from the place the log line names.
+     *
+     * - Switch on: the phone's own count. Null when the phone has no step sensor, no permission, or
+     *   no sensor event yet.
+     * - Switch off: the newest watch row of the last [MAX_AGE_MS], turned into sums
+     *   ([StepWindows.fromWatch]). Rows the phone stored itself are ignored. Null when there is no
+     *   such row.
      */
     suspend fun windows(nowMs: Long): StepWindows? {
-        if (phoneSourceOn && phone.available) phone.windows(nowMs)?.let { return it }
+        if (phoneSourceOn) return if (phone.available) phone.windows(nowMs) else null
         val rows = persistenceLayer.getStepsCountFromTimeToTime(nowMs - MAX_AGE_MS, nowMs)
         // Only the 180 minute row carries all six windows; the shorter rows leave the rest at 0.
-        val row = rows.filter { it.duration == 180 * 60 * 1000L }.maxByOrNull { it.timestamp } ?: return null
-        return StepWindows(
-            steps5 = row.steps5min,
-            steps10 = row.steps10min,
-            steps15 = row.steps15min,
+        val row = rows
+            .filter { it.duration == 180 * 60 * 1000L && it.device != phone.deviceName }
+            .maxByOrNull { it.timestamp } ?: return null
+        return StepWindows.fromWatch(
+            block5 = row.steps5min,
+            block10 = row.steps10min,
+            block15 = row.steps15min,
             steps30 = row.steps30min,
             steps60 = row.steps60min,
             steps180 = row.steps180min,
             timestamp = row.timestamp,
         )
     }
+
+    /** The five sport guard step limits from the settings. */
+    private fun guardLimits() = ActivityAfterglow.Limits(
+        mild60 = preferences.get(IntKey.ApsAutoIsfStepsMildSteps60),
+        guard30 = preferences.get(IntKey.ApsAutoIsfStepsGuardSteps30),
+        guard60 = preferences.get(IntKey.ApsAutoIsfStepsGuardSteps60),
+        long60 = preferences.get(IntKey.ApsAutoIsfStepsLongSteps60),
+        long180 = preferences.get(IntKey.ApsAutoIsfStepsLongSteps180),
+    )
 
     /**
      * The step rules for one run.
@@ -108,7 +124,8 @@ class AutoIsfSteps(
         val w = windows(nowMs)
         if (w == null) {
             lastEffort = null
-            aapsLogger.debug(LTag.APS, "AutoISF steps: a step rule is on but there is no step data")
+            val source = if (phoneSourceOn) StepSource.PHONE else StepSource.WATCH
+            aapsLogger.debug(LTag.APS, "AutoISF steps: a step rule is on but there is no step data from the ${source.label}")
             return StepsActivity.NONE
         }
         val wakeGate = if (wakeGateOn) {
@@ -135,7 +152,7 @@ class AutoIsfSteps(
         }
         lastEffort = effort
         val afterglow = if (sportGuard) {
-            val (result, memory) = ActivityAfterglow.assess(w, bg, delta, nowMs, afterglowMemory)
+            val (result, memory) = ActivityAfterglow.assess(w, bg, delta, nowMs, afterglowMemory, guardLimits())
             afterglowMemory = memory
             result
         } else {

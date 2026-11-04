@@ -296,16 +296,16 @@ nikdy nepridajú SMB ani bazál. Bez údajov o krokoch nič nezasiahne.
 
 | Prepínač | Čo robí |
 |---|---|
-| Count steps with the phone | Číta krokomer telefónu a ukladá kroky do databázy v rovnakej forme ako hodinky (riadky 5/10/15/30/60/180 min, každú minútu). Potrebuje povolenie **Fyzická aktivita** – appka si ho vypýta v hárku povolení. Vďaka tomu funguje aj upstream automatizácia „Steps count“ bez hodiniek. Kroky z pripojených hodiniek sa použijú tiež (telefón má prednosť, ak beží). |
-| Sport guard | Tri úrovne podľa krokov (mierna, guard, dlhá). Počas pohybu: temp bazál **0 %**, SMB 0 (mierna: SMB × 0,8). Po zastavení: krátke pridržanie, potom sa SMB a temp bazál pomaly vracajú na 100 % (30 až 120 minút). Pozri 8.1. |
+| Use the phone as step source | Vyberie **jeden** zdroj pre všetky pravidlá krokov, nikdy zmes. **Zapnuté:** len krokomer telefónu. Telefón ukladá kroky do databázy v rovnakej forme ako hodinky (riadky 5/10/15/30/60/180 min, každú minútu), takže funguje aj upstream automatizácia „Steps count“ bez hodiniek. Potrebuje povolenie **Fyzická aktivita** – appka si ho vypýta v hárku povolení. **Vypnuté:** len kroky, ktoré posielajú hodinky. Ak vybraný zdroj nemá čerstvé údaje (mladšie ako 15 minút), pravidlá krokov nerobia nič; ticho sa neprepne na druhý zdroj. Hodinky posielajú 10- a 15-minútovú hodnotu ako samostatné 5-minútové bloky; appka bloky sčíta, takže oba zdroje sa čítajú rovnako. Hodinky počítajú dokončené 5-minútové bloky, preto ich najnovšia hodnota môže byť až 5 minút stará. |
+| Sport guard | Tri úrovne podľa krokov (mierna, guard, dlhá). Počas pohybu: temp bazál **0 %**, SMB 0 (mierna: SMB × 0,8). Po zastavení: krátke pridržanie, potom sa SMB a temp bazál pomaly vracajú na 100 % (30 až 120 minút). Hranice krokov pre úrovne sú päť nastavení pod prepínačom (pozri 8.1). |
 | Longer SMB interval after activity | Po > 1500 krokoch za 3 h a BG < 120 mg/dl (6,7) aspoň 10 min medzi SMB; kým sa ešte hýbeš (> 100/5 min a > 500/30 min, posledný SMB starší než 20 min) aspoň 15 min. |
-| Morning: SMB only after waking | Medzi začiatkom a koncom rannej fázy (default 03:00–10:00) **žiadne SMB, kým telefón nenapočíta N krokov za hodinu** (default 150, nastaviteľné). Kým spíš, dawn rise koriguje len temp bazál (ako pri vypnutom SMB). Zobudenie je latch: raz otvorená brána ostane otvorená do konca fázy, aj keď sedíš pri raňajkách. Mimo fázy sa latch resetuje. Bez údajov o krokoch neblokuje nič. Kroky nerozlíšia dawn od jedla – rozlíšia spánok od bdenia; po zobudení rozhoduje tvar rastu (acce_ISF) a deklarácia jedla. |
+| Morning: SMB only after waking | Medzi začiatkom a koncom rannej fázy (default 03:00–10:00) **žiadne SMB, kým sa nenapočíta N krokov za hodinu** (default 150, nastaviteľné). Kým spíš, dawn rise koriguje len temp bazál (ako pri vypnutom SMB). Zobudenie je latch: raz otvorená brána ostane otvorená do konca fázy, aj keď sedíš pri raňajkách. Mimo fázy sa latch resetuje. Bez údajov o krokoch neblokuje nič. Kroky nerozlíšia dawn od jedla – rozlíšia spánok od bdenia; po zobudení rozhoduje tvar rastu (acce_ISF) a deklarácia jedla. |
 | Effort protection | Od 25 krokov/min je SMB menšie, pri svižnej chôdzi (40/min a viac) až ×0,45. Po skončení chôdze ochrana doznieva 30 min (krátka prechádzka) až 120 min (30+ min chôdze). Krátky „výbeh“ (len 5-min okno) zmenší SMB teraz, ale nespustí dlhú ochranu – na to treba 15-min okno. |
 
-V logu loopu je riadok `steps: 5m=… 10m=… 30m=… 60m=… 180m=…; …` a v dôvode (reason) sú texty
+V logu loopu je riadok `steps: steps (watch) 5m=… 10m=… 30m=… 60m=… 180m=…; …` (`phone`, ak je zdrojom telefón; všetky okná sú súčty) a v dôvode (reason) sú texty
 `afterglow …` a `sport guard: …` (pozri 8.1), `effort x0.62: SMB 0.80 -> 0.40U` alebo `Waiting …`.
 
-Bezpečný štart: najprv len **Count steps with the phone**, pozri sa deň-dva na graf krokov a na
+Bezpečný štart: najprv len zdroj krokov (prepínač **Use the phone as step source**), pozri sa deň-dva na graf krokov a na
 riadok `steps:` v logu. Potom **Effort protection** (najmiernejšie, plynulé), potom **Sport guard**.
 Upstream automatizácia s triggerom „Steps count“ + akciou „Start temp target“ nahrádza AIMI pravidlo
 „cieľ 130 pri aktivite“, preto také pravidlo tu nie je.
@@ -314,7 +314,7 @@ Pre vývojárov: `openAPSAutoISF/steps/` – `StepBuckets.kt` (minútové koše,
 `PhoneStepCounter.kt` (rozhranie; `AndroidPhoneStepCounter` v androidMain, iOS a desktop vracajú
 „nedostupné“), `AutoIsfSteps.kt` (ukladanie do DB, čítanie, pamäť), `StepsActivityRules.kt`,
 `EffortActivityBelief.kt` a `WakeGate.kt` (čisté pravidlá, testy v `commonTest`). `determine_basal` dostáva
-`steps_activity: StepsActivity`. Kľúče `autoISF_steps_*` v `BooleanKey`. Sport guard je `ActivityAfterglow.kt`
+`steps_activity: StepsActivity`. Kľúče `autoISF_steps_*` v `BooleanKey` a `IntKey`. `AutoIsfSteps.windows` vyberá zdroj (`StepSource`) a mení bloky z hodiniek na súčty (`StepWindows.fromWatch`). Sport guard je `ActivityAfterglow.kt`
 (čistý, pamäť drží `AutoIsfSteps`); limit temp bazálu beží po výpočte dávky v
 `DetermineBasalAutoISF.limitBasalBySteps`.
 
@@ -322,6 +322,20 @@ Pre vývojárov: `openAPSAutoISF/steps/` – `StepBuckets.kt` (minútové koše,
 
 Starý guard sa uvoľnil hneď, keď bolo 5 minút 0 krokov, a dávkovanie skočilo späť na 100 %. Teraz
 má tri úrovne a pomalý návrat.
+
+Hranice krokov sú nastavenia pod **Sport guard** (čísla nižšie sú predvolené). Každé má povolený rozsah,
+takže preklep guard nevypne. Vyššia hranica spustí guard neskôr, teda je menej ochrany. Úrovne sa
+kontrolujú od najvyššej; hranica nastavená pod nižšou úrovňou spôsobí len to, že sa nižšia úroveň
+preskočí. Rýchly nástup (400 za 5 min a 800 za 10 min) a test „hýbe sa teraz“ (100 krokov za 5 min,
+25 krokov/min za 15 min) sú pevné.
+
+| Nastavenie | Predvolené | Rozsah |
+|---|---|---|
+| Mild: kroky za 60 min | 2500 | 1000 – 5000 |
+| Strong: kroky za 30 min | 2000 | 500 – 4000 |
+| Strong: kroky za 60 min | 4000 | 1000 – 8000 |
+| Long: kroky za 60 min | 6000 | 2000 – 12000 |
+| Long: kroky za 180 min | 7000 | 2000 – 20000 |
 
 | Úroveň | Začína pri (sumy krokov) | Počas pohybu | Po zastavení |
 |---|---|---|---|

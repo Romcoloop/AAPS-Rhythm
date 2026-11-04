@@ -297,16 +297,16 @@ SMB or basal. Without step data nothing fires.
 
 | Switch | What it does |
 |---|---|
-| Count steps with the phone | Reads the phone's step sensor and stores the steps in the database the way a watch does (5/10/15/30/60/180 minute rows, once a minute). Needs the **Physical activity** permission; the app asks for it in the permissions sheet. This also makes the upstream automation trigger "Steps count" work without a watch. Steps from a connected watch are used too (the phone wins while it runs). |
-| Sport guard | Three levels from the steps (mild, guard, long). While you move: temp basal **0 %**, SMB 0 (mild: SMB × 0.8). After you stop: a short hold, then SMB and temp basal come back to 100 % slowly (30 to 120 minutes). See 8.1. |
+| Use the phone as step source | Picks **one** source for all step rules, never a mix. **On:** only the phone's step sensor. The phone also stores its steps in the database the way a watch does (5/10/15/30/60/180 minute rows, once a minute), so the upstream automation trigger "Steps count" works without a watch. Needs the **Physical activity** permission; the app asks for it in the permissions sheet. **Off:** only the steps sent by your watch. If the chosen source has no fresh data (under 15 minutes old), the step rules do nothing; there is no silent switch to the other source. A watch sends its 10 and 15 minute values as single 5 minute blocks; the app adds the blocks up, so both sources read the same way. A watch counts finished 5 minute blocks, so its newest value can be up to 5 minutes old. |
+| Sport guard | Three levels from the steps (mild, guard, long). While you move: temp basal **0 %**, SMB 0 (mild: SMB × 0.8). After you stop: a short hold, then SMB and temp basal come back to 100 % slowly (30 to 120 minutes). The step limits of the levels are five settings under the switch (see 8.1). |
 | Longer SMB interval after activity | After > 1500 steps in 3 h with BG < 120 mg/dl (6.7) at least 10 min between SMBs; while still moving (> 100/5 min and > 500/30 min, last SMB older than 20 min) at least 15 min. |
-| Morning: SMB only after waking | Between the start and end hour (default 03:00–10:00) **no SMB until the phone has counted N steps within one hour** (default 150, a setting). While asleep a dawn rise is corrected by temp basal only (as with SMB off). Waking is a latch: once open, the gate stays open until the end hour, also while sitting still at breakfast. Outside the window the latch is reset. Without step data nothing is blocked. Steps do not tell dawn from a meal; they tell sleep from being awake. Once awake, the rise shape (acce_ISF) and a declared meal decide. |
+| Morning: SMB only after waking | Between the start and end hour (default 03:00–10:00) **no SMB until N steps are counted within one hour** (default 150, a setting). While asleep a dawn rise is corrected by temp basal only (as with SMB off). Waking is a latch: once open, the gate stays open until the end hour, also while sitting still at breakfast. Outside the window the latch is reset. Without step data nothing is blocked. Steps do not tell dawn from a meal; they tell sleep from being awake. Once awake, the rise shape (acce_ISF) and a declared meal decide. |
 | Effort protection | From 25 steps/min the SMB gets smaller, at a brisk walk (40/min and more) down to ×0.45. After the walk the protection fades over 30 min (a short walk) up to 120 min (30+ min of walking). A short burst (5 minute window only) reduces the SMB now but does not start the long protection; that needs the 15 minute window. |
 
-The loop log has a line `steps: 5m=… 10m=… 30m=… 60m=… 180m=…; …` and the reason carries
+The loop log has a line `steps: steps (watch) 5m=… 10m=… 30m=… 60m=… 180m=…; …` (`phone` when the phone is the source; all windows are sums) and the reason carries
 `afterglow …` and `sport guard: …` (see 8.1), `effort x0.62: SMB 0.80 -> 0.40U` or `Waiting …`.
 
-A safe start: first only **Count steps with the phone**, look at the step graph and the `steps:` log
+A safe start: first only the step source (the switch **Use the phone as step source**), look at the step graph and the `steps:` log
 line for a day or two. Then **Effort protection** (the mildest, gradual), then **Sport guard**. The
 upstream automation with the trigger "Steps count" + the action "Start temp target" replaces AIMI's
 "target 130 while active" rule, so that rule is not here.
@@ -315,7 +315,7 @@ For developers: `openAPSAutoISF/steps/` – `StepBuckets.kt` (minute buckets, wi
 `PhoneStepCounter.kt` (interface; `AndroidPhoneStepCounter` in androidMain, iOS and desktop answer
 "not available"), `AutoIsfSteps.kt` (store to the database, read, memory), `StepsActivityRules.kt`,
 `EffortActivityBelief.kt` and `WakeGate.kt` (pure rules, tests in `commonTest`). `determine_basal` takes
-`steps_activity: StepsActivity`. Keys `autoISF_steps_*` in `BooleanKey`. The sport guard is `ActivityAfterglow.kt`
+`steps_activity: StepsActivity`. Keys `autoISF_steps_*` in `BooleanKey` and `IntKey`. `AutoIsfSteps.windows` picks the source (`StepSource`) and turns watch blocks into sums (`StepWindows.fromWatch`). The sport guard is `ActivityAfterglow.kt`
 (pure, with its memory kept in `AutoIsfSteps`); the temp basal limit runs after the dosing in
 `DetermineBasalAutoISF.limitBasalBySteps`.
 
@@ -323,6 +323,20 @@ For developers: `openAPSAutoISF/steps/` – `StepBuckets.kt` (minute buckets, wi
 
 The old guard let go at once when there were 0 steps in 5 minutes, and the dosing jumped back to
 100 %. Now it has three levels and a slow way back.
+
+The step limits are settings under **Sport guard** (the numbers below are the defaults). Each one has
+a range, so a typing mistake cannot switch the guard off. A higher limit starts the guard later, so
+there is less protection. The levels are checked from the highest down; a limit set below a lower
+level only makes that lower level skipped. The fast start (400 in 5 min and 800 in 10 min) and the
+"moving now" test (100 steps in 5 min, 25 steps/min over 15 min) are fixed.
+
+| Setting | Default | Range |
+|---|---|---|
+| Mild: steps in 60 min | 2500 | 1000 – 5000 |
+| Strong: steps in 30 min | 2000 | 500 – 4000 |
+| Strong: steps in 60 min | 4000 | 1000 – 8000 |
+| Long: steps in 60 min | 6000 | 2000 – 12000 |
+| Long: steps in 180 min | 7000 | 2000 – 20000 |
 
 | Level | Starts with (step sums) | While you move | After you stop |
 |---|---|---|---|

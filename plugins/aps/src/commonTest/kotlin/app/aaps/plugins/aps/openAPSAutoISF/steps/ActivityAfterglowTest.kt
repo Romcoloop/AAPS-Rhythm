@@ -1,5 +1,6 @@
 package app.aaps.plugins.aps.openAPSAutoISF.steps
 
+import app.aaps.core.keys.IntKey
 import app.aaps.plugins.aps.openAPSAutoISF.steps.ActivityAfterglow.Level
 import app.aaps.plugins.aps.openAPSAutoISF.steps.ActivityAfterglow.Phase
 import kotlin.test.Test
@@ -163,5 +164,42 @@ class ActivityAfterglowTest {
         assertTrue(fall.smbBlocked)
         val (ok, _) = ActivityAfterglow.assess(still(), 130.0, -4.0, t0 + 40 * minute, m)
         assertFalse(ok.smbBlocked)
+    }
+
+    @Test
+    fun `the levels follow the limits that are passed in`() {
+        val limits = ActivityAfterglow.Limits(mild60 = 1000, guard30 = 1500, guard60 = 3000, long60 = 5000, long180 = 6000)
+        assertEquals(Level.NONE, ActivityAfterglow.classify(w(s60 = 999, s30 = 1499), limits))
+        assertEquals(Level.MILD, ActivityAfterglow.classify(w(s60 = 1000), limits))
+        assertEquals(Level.GUARD, ActivityAfterglow.classify(w(s30 = 1500), limits))
+        assertEquals(Level.GUARD, ActivityAfterglow.classify(w(s60 = 3000), limits))
+        assertEquals(Level.LONG, ActivityAfterglow.classify(w(s60 = 5000), limits))
+        assertEquals(Level.LONG, ActivityAfterglow.classify(w(s180 = 6000), limits))
+        // The same sums with the default limits are one level lower.
+        assertEquals(Level.NONE, ActivityAfterglow.classify(w(s60 = 1000)))
+        assertEquals(Level.NONE, ActivityAfterglow.classify(w(s30 = 1500)))
+    }
+
+    @Test
+    fun `a walk starts the guard with a lower limit but not with the default`() {
+        val lower = ActivityAfterglow.Limits(mild60 = 2500, guard30 = 1500, guard60 = 4000, long60 = 6000, long180 = 7000)
+        // The watch case: 548 steps in 5 minutes, 841 in 15, 1672 in 30.
+        val walking = w(s5 = 548, s10 = 741, s15 = 841, s30 = 1672, s60 = 1890, s180 = 2245)
+        val (byDefault, _) = ActivityAfterglow.assess(walking, 100.0, 0.0, t0, ActivityAfterglow.Memory())
+        assertEquals(Level.NONE, byDefault.level)
+        val (byLimit, _) = ActivityAfterglow.assess(walking, 100.0, 0.0, t0, ActivityAfterglow.Memory(), lower)
+        assertEquals(Level.GUARD, byLimit.level)
+        assertEquals(Phase.MOVING, byLimit.phase)
+        assertEquals(0.0, byLimit.basalFactor, 1e-9)
+    }
+
+    @Test
+    fun `the default limits are the defaults of the settings keys`() {
+        val d = ActivityAfterglow.Limits.DEFAULT
+        assertEquals(IntKey.ApsAutoIsfStepsMildSteps60.defaultValue, d.mild60)
+        assertEquals(IntKey.ApsAutoIsfStepsGuardSteps30.defaultValue, d.guard30)
+        assertEquals(IntKey.ApsAutoIsfStepsGuardSteps60.defaultValue, d.guard60)
+        assertEquals(IntKey.ApsAutoIsfStepsLongSteps60.defaultValue, d.long60)
+        assertEquals(IntKey.ApsAutoIsfStepsLongSteps180.defaultValue, d.long180)
     }
 }
