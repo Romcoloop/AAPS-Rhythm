@@ -24,7 +24,7 @@ on:
           - fullRelease
           - fullDebug
       runTests:
-        description: 'Run the APS plugin tests first'
+        description: 'Run the APS plugin tests first (JVM and Android host tests)'
         required: true
         default: true
         type: boolean
@@ -115,7 +115,7 @@ jobs:
         if: ${{ github.event.inputs.runTests == 'true' }}
         run: |
           set -o pipefail
-          ./gradlew $GRADLE_ARGS :plugins:aps:jvmTest 2>&1 | tee aps-tests.log
+          ./gradlew $GRADLE_ARGS :plugins:aps:jvmTest :plugins:aps:testAndroidHostTest --continue 2>&1 | tee aps-tests.log
 
       # The full log is only on the run page. Compile errors and failed tests are repeated here as
       # annotations, so they show on the run summary and can be read through the API.

@@ -330,16 +330,33 @@ class DetermineBasalAutoISFTest : TestBaseWithProfile() {
         assertThat(spaced.reason.toString()).contains("Waiting")
     }
 
+    @Test
+    fun `zz diagnose SMB scenarios`() {
+        val table = StringBuilder("\nSCENARIOS iob/activity -> units, rate, duration, insulinReq\n")
+        for (iobValue in listOf(0.0, 0.3, 0.6, 1.0, 1.3)) {
+            for (activityValue in listOf(0.0, 0.002, 0.005, 0.0105)) {
+                val rT = runWithSmb(iobValue = iobValue, activityValue = activityValue)
+                table.append("SCEN iob=$iobValue act=$activityValue units=${rT.units} rate=${rT.rate} dur=${rT.duration} req=${rT.insulinReq} ev=${rT.eventualBG}\n")
+            }
+        }
+        throw AssertionError(table.toString())
+    }
+
     /** BG high and rising so a bolus is wanted, with enough insulin acting that the worst case lands below target. */
-    private fun runWithSmb(lastBolusAgeMinutes: Int = 60, steps: StepsActivity = StepsActivity.NONE): RT {
+    private fun runWithSmb(
+        lastBolusAgeMinutes: Int = 60,
+        steps: StepsActivity = StepsActivity.NONE,
+        iobValue: Double = 1.3,
+        activityValue: Double = 0.0105,
+    ): RT {
         val iobs = Array(48) { i ->
             val time = currentTime + i * 5 * 60000L
             IobTotal(
                 time = time,
-                iob = 1.3,
-                activity = 0.0105,
+                iob = iobValue,
+                activity = activityValue,
                 lastBolusTime = currentTime - lastBolusAgeMinutes * 60000L,
-                iobWithZeroTemp = IobTotal(time = time, iob = 1.3, activity = 0.0105)
+                iobWithZeroTemp = IobTotal(time = time, iob = iobValue, activity = activityValue)
             )
         }
         return sut.determine_basal(

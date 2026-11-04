@@ -37,7 +37,7 @@ class AndroidPhoneStepCounter(
     private val aapsLogger: AAPSLogger,
 ) : PhoneStepCounter, SensorEventListener {
 
-    private val sensorManager: SensorManager? = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager?
+    private val sensorManager: SensorManager? = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
     private val sensor: Sensor? = sensorManager?.getDefaultSensor(Sensor.TYPE_STEP_COUNTER)
     private val buckets = StepBuckets()
     private var listening = false
