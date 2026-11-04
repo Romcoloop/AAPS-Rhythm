@@ -28,6 +28,11 @@ on:
         required: true
         default: true
         type: boolean
+      fullTests:
+        description: 'Run the whole unit test suite of the project first (about 40 minutes)'
+        required: true
+        default: false
+        type: boolean
 
 concurrency:
   group: autoisf-apk-${{ github.ref }}
@@ -123,6 +128,47 @@ jobs:
             grep -B1 -E 'AssertionError|AssertionFailedError|^[A-Za-z.]*Exception' aps-tests.log | sed 's/^/::error ::/'
             grep -A6 'What went wrong' aps-tests.log | grep -v '^> Task' | sed 's/^/::error ::/'
           } | head -10 || true
+
+      # The same gradle tasks as .github/workflows/unit-tests.yml. That project workflow is skipped in
+      # a fork, so this is the way to run the whole suite here. Keep the task list the same.
+      # --continue: gradle goes on after the first failing module, so one run shows every failure.
+      # The memory settings are the ones of the project workflow, made for a hosted runner.
+      - name: Run the whole unit suite
+        if: ${{ github.event.inputs.fullTests == 'true' }}
+        run: |
+          set -o pipefail
+          mkdir -p ~/.gradle
+          cat > ~/.gradle/gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx3g -XX:+UseParallelGC -Xss4m
+          org.gradle.workers.max=3
+          kotlin.daemon.jvm.options=-Xmx4g
+          EOF
+          ./gradlew --console=plain --no-daemon --continue \
+            testFullDebugUnitTest testDebugUnitTest jvmTest testAndroidHostTest :desktop:shell:test \
+            2>&1 | tee full-tests.log
+
+      - name: Whole suite failures as annotations
+        if: ${{ failure() && github.event.inputs.fullTests == 'true' }}
+        run: |
+          {
+            echo "### Failed tests and compile errors"
+            grep -E ' FAILED$|^e: ' full-tests.log | sort -u | sed 's/^/- /'
+          } >> "$GITHUB_STEP_SUMMARY" || true
+          {
+            grep -E '^e: ' full-tests.log | sed -E 's#^e: file://([^:]+):([0-9]+):([0-9]+) (.*)#::error file=\1,line=\2::\4#'
+            grep -E ' FAILED$' full-tests.log | sort -u | sed 's/^/::error ::/'
+            grep -A6 'What went wrong' full-tests.log | grep -v '^> Task' | sed 's/^/::error ::/'
+          } | head -10 || true
+
+      - name: Keep the whole suite test reports
+        if: ${{ always() && github.event.inputs.fullTests == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: |
+            **/build/test-results/**/*.xml
+            full-tests.log
+          retention-days: 7
 
       - name: Build APK
         env:
