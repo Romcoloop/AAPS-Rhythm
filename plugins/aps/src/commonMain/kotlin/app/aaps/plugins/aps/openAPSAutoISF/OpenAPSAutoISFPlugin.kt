@@ -957,6 +957,7 @@ open class OpenAPSAutoISFPlugin(
             IntKey.ApsAutoIsfHalfBasalExerciseTarget,
             BooleanKey.ApsUseSmb,
             BooleanKey.ApsUseSmbWithHighTt,
+            BooleanKey.ApsUseSmbAnySensor,
             BooleanKey.ApsUseSmbAlways,
             BooleanKey.ApsUseSmbWithCob,
             BooleanKey.ApsUseSmbWithLowTt,

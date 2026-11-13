@@ -139,6 +139,25 @@ class SafetyPluginTest : TestBaseWithProfile() {
     }
 
     @Test
+    fun userCanAllowSMBAlwaysForAnySensor() = runTest {
+        whenever(persistenceLayer.isAdvancedFilteringSupported()).thenReturn(false)
+        whenever(preferences.get(BooleanKey.ApsUseSmbAnySensor)).thenReturn(true)
+        val c = safetyPlugin.isAdvancedFilteringEnabled(ConstraintObject(true, aapsLogger))
+        // Not limited, but the loop still says why.
+        assertThat(c.value()).isTrue()
+        assertThat(c.getReasons()).isEqualTo("Safety: SMB always and after carbs allowed by the user though the active BG source has no advanced filtering")
+    }
+
+    @Test
+    fun anySensorSwitchSaysNothingForASensorWithAdvancedFiltering() = runTest {
+        whenever(persistenceLayer.isAdvancedFilteringSupported()).thenReturn(true)
+        whenever(preferences.get(BooleanKey.ApsUseSmbAnySensor)).thenReturn(true)
+        val c = safetyPlugin.isAdvancedFilteringEnabled(ConstraintObject(true, aapsLogger))
+        assertThat(c.value()).isTrue()
+        assertThat(c.getReasons()).isEmpty()
+    }
+
+    @Test
     fun basalRateShouldBeLimited() {
         whenever(preferences.get(DoubleKey.ApsMaxBasal)).thenReturn(1.0)
         whenever(preferences.get(DoubleKey.ApsMaxCurrentBasalMultiplier)).thenReturn(4.0)

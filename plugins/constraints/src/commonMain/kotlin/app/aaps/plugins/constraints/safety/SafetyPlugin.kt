@@ -24,6 +24,7 @@ import app.aaps.core.interfaces.utils.DateUtil
 import app.aaps.core.interfaces.utils.DecimalFormatter
 import app.aaps.core.interfaces.utils.HardLimits
 import app.aaps.core.interfaces.utils.Round
+import app.aaps.core.keys.BooleanKey
 import app.aaps.core.keys.DoubleKey
 import app.aaps.core.keys.IntKey
 import app.aaps.core.keys.StringKey
@@ -96,7 +97,12 @@ class SafetyPlugin(
     }
 
     override suspend fun isAdvancedFilteringEnabled(value: Constraint<Boolean>): Constraint<Boolean> {
-        if (!persistenceLayer.isAdvancedFilteringSupported()) value.set(false, rh.gs(ConstraintsStrings.smbalwaysdisabled), this)
+        if (!persistenceLayer.isAdvancedFilteringSupported()) {
+            // Cadence: the user can take this limit off (off by default). The reason stays in the list, so
+            // the loop shows on every run that the limit was lifted by a setting.
+            if (preferences.get(BooleanKey.ApsUseSmbAnySensor)) value.addReason(rh.gs(ConstraintsStrings.smbalways_any_sensor), this)
+            else value.set(false, rh.gs(ConstraintsStrings.smbalwaysdisabled), this)
+        }
         return value
     }
 

@@ -10,6 +10,7 @@ four places. Everything else is upstream AndroidAPS.
 | 3. Slots: own values per meal, weekend and night | Slot times + Slot values (slot sections) | switch off = as upstream |
 | 4. AutoISF log analysis (the tuning card) | card on the AutoISF plugin screen | reads only; writes on "Apply" |
 | 5. Steps and activity | AutoISF settings → Steps and activity | all 5 switches off = as upstream |
+| 6. SMB always with any sensor | AutoISF settings → SMB always with any sensor | switch off = as upstream |
 
 All of it is in the branch `main`. **Install builds from `main`.**
 Build: GitHub Actions workflow "AutoISF APK" (phone and wear APK; `runTests = true` runs the APS unit
@@ -378,3 +379,22 @@ In the log (loop reason):
 `afterglow GUARD: moving, basal 0%, SMB 0` · `afterglow GUARD: hold 4/10m, basal 0%, SMB 0` ·
 `afterglow GUARD: taper 20/60m, x0.67` (+ `high and rising, half length` or `low or falling, SMB 0`) ·
 `sport guard: temp basal 1.2 -> 0U/hr` (the basal limit changed the temp) · `sport guard: no SMB`.
+
+## 9. SMB always with any sensor
+
+AAPS lets **Enable SMB always** and **Enable SMB after carbs** work only with a glucose sensor that
+filters its values itself (Dexcom G6 and G7, Libre 2, Libre 3, Syai Tag). With any other sensor these two
+are off and hidden, and an SMB is given only with carbs on board or with a low temp target.
+
+The switch **SMB always with any sensor** takes this limit off. It is in the AutoISF settings (and in the
+OpenAPS SMB settings), above "Enable SMB always", and it is **off by default**. This is not a change of
+AutoISF, it changes a safety rule of AAPS.
+
+- **Risk:** a sensor without filtering can show a jump that is not real. An SMB given for it can not be
+  taken back, as a temp basal can. That can end in a low.
+- **Before you turn it on:** know your sensor well, and use glucose smoothing (exponential or average
+  smoothing in the configuration).
+- **In the loop:** while the switch is on and the sensor is not on the list, the constraints of every run
+  say `Safety: SMB always and after carbs allowed by the user though the active BG source has no advanced
+  filtering`.
+- **Simple mode** uses the default, so the limit stays on there.

@@ -10,6 +10,7 @@ miestach. Všetko ostatné je upstream AndroidAPS.
 | 3. Sloty: vlastné hodnoty pre jedlo, víkend a noc | Slot times + Slot values (sekcie slotov) | prepínač vypnutý = ako upstream |
 | 4. AutoISF log analysis (ladiaca karta) | karta na obrazovke pluginu AutoISF | len číta; zapisuje po „Použiť“ |
 | 5. Kroky a aktivita | AutoISF settings → Steps and activity | všetkých 5 prepínačov vypnutých = ako upstream |
+| 6. SMB vždy s akýmkoľvek senzorom | AutoISF settings → SMB always with any sensor | prepínač vypnutý = ako upstream |
 
 Všetko je vo vetve `main`. **Inštaluj buildy z `main`.**
 Build: GitHub Actions workflow „AutoISF APK“ (APK pre telefón aj hodinky; `runTests = true` najprv
@@ -377,3 +378,22 @@ V logu (reason loopu):
 `afterglow GUARD: moving, basal 0%, SMB 0` · `afterglow GUARD: hold 4/10m, basal 0%, SMB 0` ·
 `afterglow GUARD: taper 20/60m, x0.67` (+ `high and rising, half length` alebo `low or falling, SMB 0`) ·
 `sport guard: temp basal 1.2 -> 0U/hr` (limit bazálu zmenil temp) · `sport guard: no SMB`.
+
+## 9. SMB vždy s akýmkoľvek senzorom
+
+AAPS povolí **Enable SMB always** a **Enable SMB after carbs** len so senzorom, ktorý si hodnoty sám
+vyhladzuje (Dexcom G6 a G7, Libre 2, Libre 3, Syai Tag). Pri inom senzore sú tieto dve voľby vypnuté
+a skryté a SMB sa podá len pri aktívnych sacharidoch alebo pri nízkom dočasnom cieli.
+
+Prepínač **SMB always with any sensor** toto obmedzenie zruší. Je v nastaveniach AutoISF (a aj v nastaveniach
+OpenAPS SMB), nad „Enable SMB always“, a je **predvolene vypnutý**. Nie je to zmena AutoISF, mení
+bezpečnostné pravidlo AAPS.
+
+- **Riziko:** senzor bez vyhladzovania môže ukázať skok, ktorý nie je skutočný. SMB podaný kvôli nemu sa
+  nedá vziať späť tak ako dočasný bazál. Môže to skončiť hypoglykémiou.
+- **Pred zapnutím:** svoj senzor treba dobre poznať a mať zapnuté vyhladzovanie glykémie (exponenciálne
+  alebo priemerovanie, v konfigurácii).
+- **V slučke:** kým je prepínač zapnutý a senzor nie je na zozname, v obmedzeniach každého behu je
+  `Safety: SMB always and after carbs allowed by the user though the active BG source has no advanced
+  filtering`.
+- **Jednoduchý režim** používa predvolenú hodnotu, takže tam obmedzenie ostáva.

@@ -564,6 +564,7 @@ open class OpenAPSSMBPlugin(
             BooleanKey.ApsResistanceLowersTarget,
             BooleanKey.ApsUseSmb,
             BooleanKey.ApsUseSmbWithHighTt,
+            BooleanKey.ApsUseSmbAnySensor,
             BooleanKey.ApsUseSmbAlways,
             BooleanKey.ApsUseSmbWithCob,
             BooleanKey.ApsUseSmbWithLowTt,

@@ -10,6 +10,7 @@ import app.aaps.core.interfaces.logging.LTag
 import app.aaps.core.interfaces.plugin.ActivePlugin
 import app.aaps.core.interfaces.rx.collectResilient
 import app.aaps.core.interfaces.sync.NsClient
+import app.aaps.core.keys.BooleanKey
 import app.aaps.core.keys.interfaces.ClientRole
 import app.aaps.core.keys.interfaces.Preferences
 import app.aaps.core.keys.interfaces.VisibilityContext
@@ -90,8 +91,10 @@ class VisibilityContextImpl(
     override val isRefillingCapable: Boolean
         get() = activePlugin.activePump.pumpDescription.isRefillingCapable
 
+    // Cadence: also true when the user allowed "SMB always" for any sensor, so the settings that
+    // SafetyPlugin lets through are shown too.
     override val advancedFilteringSupported: Boolean
-        get() = cachedAdvancedFiltering
+        get() = cachedAdvancedFiltering || preferences.get(BooleanKey.ApsUseSmbAnySensor)
 
     override val isPumpInitialized: Boolean
         get() = activePlugin.activePump.isInitialized()

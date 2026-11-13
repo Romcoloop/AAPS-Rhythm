@@ -107,6 +107,19 @@ enum class BooleanKey(
         dependency = ApsUseSmb,
         sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
     ),
+    /**
+     * Cadence: lets "SMB always" and "SMB after carbs" work also with a BG source that has no advanced
+     * filtering. Off is the AAPS rule: those two are switched off for such a source.
+     */
+    ApsUseSmbAnySensor(
+        "enableSMB_any_sensor",
+        false,
+        KeysStrings.pref_title_aps_use_smb_any_sensor,
+        KeysStrings.pref_summary_aps_use_smb_any_sensor,
+        defaultedBySM = true,
+        dependency = ApsUseSmb,
+        sync = SyncSpec(SyncChannel.Cold, SyncDirection.Bidirectional)
+    ),
     ApsUseSmbAlways(
         "enableSMB_always", true, KeysStrings.pref_title_aps_use_smb_always, KeysStrings.pref_summary_aps_use_smb_always, defaultedBySM = true, dependency = ApsUseSmb,
         visibility = ElementVisibility.ADVANCED_FILTERING,
