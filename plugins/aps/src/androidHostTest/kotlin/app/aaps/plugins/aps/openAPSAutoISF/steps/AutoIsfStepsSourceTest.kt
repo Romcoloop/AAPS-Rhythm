@@ -18,8 +18,9 @@ import org.mockito.kotlin.whenever
 
 /**
  * The switch "Use the phone as step source" picks ONE source. These tests keep the two sources apart
- * and check the watch values: its 10 and 15 minute values are single 5 minute blocks and must be
- * added up before the rules read them.
+ * and check the watch values. A watch app before AAPS #5499 sends its 10 and 15 minute values as
+ * single 5 minute blocks and they must be added up before the rules read them. A newer watch app
+ * sends sums and they must not be added up again.
  */
 class AutoIsfStepsSourceTest : TestBase() {
 
@@ -48,6 +49,34 @@ class AutoIsfStepsSourceTest : TestBase() {
         steps30min = 1672, steps60min = 1890, steps180min = 2245, device = device,
     )
 
+    private val lengths = listOf(5, 10, 15, 30, 60, 180)
+
+    /** One sample of a watch app before AAPS #5499: six rows, each filled up to its own length only. */
+    private fun blockSample(block5: Int, block10: Int, block15: Int, steps30: Int, steps60: Int, steps180: Int): List<SC> =
+        lengths.map { minutes ->
+            SC(
+                duration = minutes * 60 * 1000L, timestamp = now - 60_000L,
+                steps5min = block5,
+                steps10min = if (minutes >= 10) block10 else 0,
+                steps15min = if (minutes >= 15) block15 else 0,
+                steps30min = if (minutes >= 30) steps30 else 0,
+                steps60min = if (minutes >= 60) steps60 else 0,
+                steps180min = if (minutes >= 180) steps180 else 0,
+                device = watchName,
+            )
+        }
+
+    /** One sample of a watch app from AAPS #5499 on: six rows, every row has all six sums. */
+    private fun sumSample(steps5: Int, steps10: Int, steps15: Int, steps30: Int, steps60: Int, steps180: Int): List<SC> =
+        lengths.map { minutes ->
+            SC(
+                duration = minutes * 60 * 1000L, timestamp = now - 60_000L,
+                steps5min = steps5, steps10min = steps10, steps15min = steps15,
+                steps30min = steps30, steps60min = steps60, steps180min = steps180,
+                device = watchName,
+            )
+        }
+
     private fun phoneWindows() = StepWindows(
         steps5 = 10, steps10 = 20, steps15 = 30, steps30 = 40, steps60 = 50, steps180 = 60, timestamp = now,
     )
@@ -63,6 +92,41 @@ class AutoIsfStepsSourceTest : TestBase() {
         assertThat(w.steps5).isEqualTo(548)
         assertThat(w.steps10).isEqualTo(741)   // 548 + 193
         assertThat(w.steps15).isEqualTo(841)   // 548 + 193 + 100
+        assertThat(w.steps30).isEqualTo(1672)
+        assertThat(w.steps60).isEqualTo(1890)
+        assertThat(w.steps180).isEqualTo(2245)
+    }
+
+    @Test
+    fun `the blocks of an older watch app are added up`() = runTest {
+        switchOn(false)
+        whenever(persistenceLayer.getStepsCountFromTimeToTime(any(), any()))
+            .thenReturn(blockSample(block5 = 548, block10 = 193, block15 = 100, steps30 = 1672, steps60 = 1890, steps180 = 2245))
+
+        val w = steps.windows(now)!!
+
+        assertThat(w.source).isEqualTo(StepSource.WATCH)
+        assertThat(w.steps5).isEqualTo(548)
+        assertThat(w.steps10).isEqualTo(741)   // 548 + 193
+        assertThat(w.steps15).isEqualTo(841)   // 548 + 193 + 100
+        assertThat(w.steps30).isEqualTo(1672)
+        assertThat(w.steps60).isEqualTo(1890)
+        assertThat(w.steps180).isEqualTo(2245)
+    }
+
+    @Test
+    fun `the sums of a newer watch app are not added up again`() = runTest {
+        switchOn(false)
+        // The same walk as in the test above. Added up again it would be 1289 and 2130.
+        whenever(persistenceLayer.getStepsCountFromTimeToTime(any(), any()))
+            .thenReturn(sumSample(steps5 = 548, steps10 = 741, steps15 = 841, steps30 = 1672, steps60 = 1890, steps180 = 2245))
+
+        val w = steps.windows(now)!!
+
+        assertThat(w.source).isEqualTo(StepSource.WATCH)
+        assertThat(w.steps5).isEqualTo(548)
+        assertThat(w.steps10).isEqualTo(741)
+        assertThat(w.steps15).isEqualTo(841)
         assertThat(w.steps30).isEqualTo(1672)
         assertThat(w.steps60).isEqualTo(1890)
         assertThat(w.steps180).isEqualTo(2245)
@@ -163,5 +227,32 @@ class AutoIsfStepsSourceTest : TestBase() {
         assertThat(after.basalFactor).isEqualTo(0.0)
         assertThat(after.sportGuard).isTrue()
         assertThat(after.log).contains("steps (watch) 5m=548 10m=741")
+    }
+
+    @Test
+    fun `one short burst from a newer watch app does not start the sport guard`() = runTest {
+        switchOn(false)
+        guardOn(guard30 = 2000)
+        // 450 steps in the last finished 5 minutes and none before. The fast start needs 400 in
+        // 5 minutes and 800 in 10 minutes. Read as blocks the 10 minutes would be 450 + 450 = 900
+        // and the guard would stop the basal for a walk that did not happen.
+        whenever(persistenceLayer.getStepsCountFromTimeToTime(any(), any()))
+            .thenReturn(sumSample(steps5 = 450, steps10 = 450, steps15 = 450, steps30 = 450, steps60 = 450, steps180 = 450))
+
+        val newer = steps.decide(now, 100.0, 0.0, 0L)
+
+        assertThat(newer.sportGuard).isFalse()
+        assertThat(newer.basalFactor).isEqualTo(1.0)
+        assertThat(newer.log).contains("steps (watch) 5m=450 10m=450")
+
+        // The same burst from an older watch app gives the same answer.
+        whenever(persistenceLayer.getStepsCountFromTimeToTime(any(), any()))
+            .thenReturn(blockSample(block5 = 450, block10 = 0, block15 = 0, steps30 = 450, steps60 = 450, steps180 = 450))
+
+        val older = steps.decide(now, 100.0, 0.0, 0L)
+
+        assertThat(older.sportGuard).isFalse()
+        assertThat(older.basalFactor).isEqualTo(1.0)
+        assertThat(older.log).contains("steps (watch) 5m=450 10m=450")
     }
 }

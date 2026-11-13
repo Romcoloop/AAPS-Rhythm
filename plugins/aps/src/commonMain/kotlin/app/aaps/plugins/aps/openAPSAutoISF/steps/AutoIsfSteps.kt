@@ -73,26 +73,41 @@ class AutoIsfSteps(
      *
      * - Switch on: the phone's own count. Null when the phone has no step sensor, no permission, or
      *   no sensor event yet.
-     * - Switch off: the newest watch row of the last [MAX_AGE_MS], turned into sums
-     *   ([StepWindows.fromWatch]). Rows the phone stored itself are ignored. Null when there is no
-     *   such row.
+     * - Switch off: the newest watch row of the last [MAX_AGE_MS], as sums. A watch app before AAPS
+     *   #5499 sends single blocks for 10 and 15 minutes and they are added up
+     *   ([StepWindows.fromWatchBlocks]); a newer one sends sums and they are taken as they are
+     *   ([StepWindows.fromWatchSums]). [watchSendsSums] tells the two apart. Rows the phone stored
+     *   itself are ignored. Null when there is no such row.
      */
     suspend fun windows(nowMs: Long): StepWindows? {
         if (phoneSourceOn) return if (phone.available) phone.windows(nowMs) else null
-        val rows = persistenceLayer.getStepsCountFromTimeToTime(nowMs - MAX_AGE_MS, nowMs)
-        // Only the 180 minute row carries all six windows; the shorter rows leave the rest at 0.
-        val row = rows
-            .filter { it.duration == 180 * 60 * 1000L && it.device != phone.deviceName }
+        val watchRows = persistenceLayer.getStepsCountFromTimeToTime(nowMs - MAX_AGE_MS, nowMs)
+            .filter { it.device != phone.deviceName }
+        // The 180 minute row has all six windows with every version of the watch app.
+        val row = watchRows
+            .filter { it.duration == LONGEST_WINDOW_MS }
             .maxByOrNull { it.timestamp } ?: return null
-        return StepWindows.fromWatch(
-            block5 = row.steps5min,
-            block10 = row.steps10min,
-            block15 = row.steps15min,
-            steps30 = row.steps30min,
-            steps60 = row.steps60min,
-            steps180 = row.steps180min,
-            timestamp = row.timestamp,
-        )
+        return if (watchSendsSums(row, watchRows)) {
+            StepWindows.fromWatchSums(
+                steps5 = row.steps5min,
+                steps10 = row.steps10min,
+                steps15 = row.steps15min,
+                steps30 = row.steps30min,
+                steps60 = row.steps60min,
+                steps180 = row.steps180min,
+                timestamp = row.timestamp,
+            )
+        } else {
+            StepWindows.fromWatchBlocks(
+                block5 = row.steps5min,
+                block10 = row.steps10min,
+                block15 = row.steps15min,
+                steps30 = row.steps30min,
+                steps60 = row.steps60min,
+                steps180 = row.steps180min,
+                timestamp = row.timestamp,
+            )
+        }
     }
 
     /** The five sport guard step limits from the settings. */
@@ -168,10 +183,46 @@ class AutoIsfSteps(
         /** Steps older than this are not used for dosing. */
         const val MAX_AGE_MS = 15 * 60 * 1000L
 
+        /** The length of the longest step window, the one of the row that has all six windows. */
+        private const val LONGEST_WINDOW_MS = 180 * 60 * 1000L
+
         /**
-         * The six rows the watch writes for one sample: one per window length, each with the windows
-         * up to its own length filled and the longer ones at 0. The automation trigger picks the row
-         * by its duration, so all six are needed.
+         * True when the watch that wrote [row] sends its 10 and 15 minute values as sums (the watch app
+         * of AAPS #5499 and newer). False when they are single 5 minute blocks (older watch apps).
+         *
+         * The 180 minute row looks the same in both forms, so the shorter rows of the same watch give
+         * the answer. An older watch app fills a row only up to its own length: its 5 minute row has 0
+         * for 10 minutes and longer. A newer one fills all six windows in every row. So a shorter row
+         * with steps in a window longer than itself can only come from a newer watch app.
+         *
+         * The rows of the same sample as [row] decide. Only when the sample has no shorter row, the
+         * other rows of this watch in [rows] decide. Without any such steps the answer is false, the
+         * form every watch app had before, so nothing changes for an older watch.
+         *
+         * @param row the 180 minute row the steps are read from
+         * @param rows the watch rows of the last minutes, [row] among them
+         */
+        internal fun watchSendsSums(row: SC, rows: List<SC>): Boolean {
+            val shorter = rows.filter { it.device == row.device && it.duration < row.duration }
+            val sameSample = shorter.filter { it.timestamp == row.timestamp }
+            return sameSample.ifEmpty { shorter }.any { it.hasStepsBeyondOwnWindow() }
+        }
+
+        /** True when this row has steps in a window that is longer than the row itself. */
+        private fun SC.hasStepsBeyondOwnWindow(): Boolean {
+            val minutes = duration / 60_000L
+            return (minutes < 10 && steps10min > 0) ||
+                (minutes < 15 && steps15min > 0) ||
+                (minutes < 30 && steps30min > 0) ||
+                (minutes < 60 && steps60min > 0) ||
+                (minutes < 180 && steps180min > 0)
+        }
+
+        /**
+         * Six rows for one sample of the phone: one per window length, each with the windows up to its
+         * own length filled and the longer ones at 0. This is the form of a watch app before AAPS
+         * #5499. An automation trigger of that time picks the row by its duration, so all six are
+         * needed. The trigger of today reads the 180 minute row, which has all the windows.
          */
         fun rows(w: StepWindows, device: String): List<SC> {
             val lengths = listOf(5, 10, 15, 30, 60, 180)
