@@ -143,7 +143,7 @@ android {
             isDefault = true
             applicationId = "info.nightscout.androidaps"
             dimension = "standard"
-            resValue("string", "app_name", "AAPS")
+            resValue("string", "app_name", "Cadence")
             versionName = Versions.appVersion
             manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
             manifestPlaceholders["appIconRound"] = "@mipmap/ic_launcher_round"

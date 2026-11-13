@@ -67,8 +67,8 @@ android {
             isDefault = true
             applicationId = "info.nightscout.androidaps"
             dimension = "standard"
-            resValue("string", "app_name", "AAPS")
-            resValue("string", "label_actions_activity", "AAPS")
+            resValue("string", "app_name", "Cadence")
+            resValue("string", "label_actions_activity", "Cadence")
             resValue("color", "flavor_header_color", "#B0BEC5")
             versionName = Versions.appVersion
             manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
