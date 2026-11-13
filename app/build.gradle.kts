@@ -144,7 +144,9 @@ android {
             applicationId = "info.nightscout.androidaps"
             dimension = "standard"
             resValue("string", "app_name", "Cadence")
-            versionName = Versions.appVersion
+            // Own version name, like the client builds below have. The AAPS list of end dates is
+            // looked up by this name, so an end date set for an AAPS version does not stop this build.
+            versionName = Versions.appVersion + "-cadence"
             manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher"
             manifestPlaceholders["appIconRound"] = "@mipmap/ic_launcher_round"
         }
