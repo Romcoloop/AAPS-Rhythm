@@ -1,6 +1,6 @@
 # AutoISF fork: blended BG, časy jedál, sloty a ladiaca karta
 
-Tento fork AndroidAPS (github.com/Romcoloop/AndroidAPS) mení plugin **OpenAPS AutoISF** na štyroch
+AAPS-Rhythm, zostavenie AndroidAPS (github.com/Romcoloop/AAPS-Rhythm), mení plugin **OpenAPS AutoISF** na štyroch
 miestach. Všetko ostatné je upstream AndroidAPS.
 
 | Čo | Kde v appke | Vypnuté znamená |
@@ -9,11 +9,9 @@ miestach. Všetko ostatné je upstream AndroidAPS.
 | 2. Časy jedál (okná slotov jedál) | AutoISF settings | žiadny čas jedla = ako upstream |
 | 3. Sloty: vlastné hodnoty pre jedlo, víkend a noc | Slot times + Slot values (sekcie slotov) | prepínač vypnutý = ako upstream |
 | 4. AutoISF log analysis (ladiaca karta) | karta na obrazovke pluginu AutoISF | len číta; zapisuje po „Použiť“ |
-| 5. Kroky a aktivita (vetva `autoisf-steps`) | AutoISF settings → Steps and activity | všetkých 5 prepínačov vypnutých = ako upstream |
+| 5. Kroky a aktivita | AutoISF settings → Steps and activity | všetkých 5 prepínačov vypnutých = ako upstream |
 
-Vetvy: `autoisf-custom` (1, 2, 4) → `autoisf-slots` (3, fáza 1) → `autoisf-slots-2` (víkend, noc)
-→ `autoisf-analysis` (všetko, plus 4: posledné hodiny) → `autoisf-steps` (5, kroky). **Inštaluj buildy
-z `autoisf-steps`**: má všetko. `autoisf-analysis` je to isté bez pravidiel krokov.
+Všetko je vo vetve `main`. **Inštaluj buildy z `main`.**
 Build: GitHub Actions workflow „AutoISF APK“ (APK pre telefón aj hodinky; `runTests = true` najprv
 spustí unit testy modulu APS).
 
@@ -288,7 +286,7 @@ maxSMBBasalMinutes 30, UAM 30, cieľ 6,2 mmol/l, ISF 2,27 mmol/l/U, CR 12 g/U.
 - Unit testy modulu APS bežia vo workflow „AutoISF APK“ s `runTests = true`. Snímka schémy
   preferencií (`app/src/testFull/resources/prefs-schema.txt`) sa udržiava ručne, zoradená.
 
-## 8. Kroky a aktivita (vetva `autoisf-steps`)
+## 8. Kroky a aktivita
 
 Päť prepínačov v AutoISF settings → **Steps and activity**. Všetky sú vypnuté; vypnuté = ako
 upstream. Pravidlá sú prenesené z OpenAPS AIMI (MTR93600/OpenApsAIMI, AGPL-3.0) a **len uberajú**:

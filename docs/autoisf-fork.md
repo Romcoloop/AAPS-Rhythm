@@ -1,6 +1,6 @@
 # AutoISF fork: blended BG, meal times, slots and the tuning card
 
-This fork of AndroidAPS (github.com/Romcoloop/AndroidAPS) changes the **OpenAPS AutoISF** plugin in
+AAPS-Rhythm, a build of AndroidAPS (github.com/Romcoloop/AAPS-Rhythm), changes the **OpenAPS AutoISF** plugin in
 four places. Everything else is upstream AndroidAPS.
 
 | What | Where in the app | Off means |
@@ -9,11 +9,9 @@ four places. Everything else is upstream AndroidAPS.
 | 2. Meal times (the windows of the meal slots) | AutoISF settings | no meal time set = as upstream |
 | 3. Slots: own values per meal, weekend and night | Slot times + Slot values (slot sections) | switch off = as upstream |
 | 4. AutoISF log analysis (the tuning card) | card on the AutoISF plugin screen | reads only; writes on "Apply" |
-| 5. Steps and activity (branch `autoisf-steps`) | AutoISF settings → Steps and activity | all 5 switches off = as upstream |
+| 5. Steps and activity | AutoISF settings → Steps and activity | all 5 switches off = as upstream |
 
-Branches: `autoisf-custom` (1, 2, 4) → `autoisf-slots` (3, phase 1) → `autoisf-slots-2` (weekend,
-night) → `autoisf-analysis` (everything, plus 4: the last hours) → `autoisf-steps` (5, steps). **Install
-builds from `autoisf-steps`**: it has everything. `autoisf-analysis` is the same without the step rules.
+All of it is in the branch `main`. **Install builds from `main`.**
 Build: GitHub Actions workflow "AutoISF APK" (phone and wear APK; `runTests = true` runs the APS unit
 tests first).
 
@@ -289,7 +287,7 @@ Starting values for the slots, until the analysis says otherwise:
   preference schema snapshot (`app/src/testFull/resources/prefs-schema.txt`) is kept by hand and
   sorted.
 
-## 8. Steps and activity (branch `autoisf-steps`)
+## 8. Steps and activity
 
 Five switches in AutoISF settings → **Steps and activity**. All are off; off = as upstream. The rules
 are ported from OpenAPS AIMI (MTR93600/OpenApsAIMI, AGPL-3.0) and **only reduce**: they never add an

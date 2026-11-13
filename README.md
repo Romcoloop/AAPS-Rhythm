@@ -1,17 +1,15 @@
-# This fork: AutoISF with slots and a tuning card
+# AAPS-Rhythm: AutoISF with slots and a tuning card
 
-This is a fork of AndroidAPS with four changes to the **OpenAPS AutoISF** plugin: blended BG for
+AAPS-Rhythm is a build of AndroidAPS with four changes to the **OpenAPS AutoISF** plugin: blended BG for
 bg_ISF, meal times, **slots** (own AutoISF and SMB values for each
 meal, for the weekend and for the night) and an **AutoISF log analysis** card that suggests settings
 from the phone's logs. Nothing changes a value on its own.
 
-* **Manual:** [docs/autoisf-fork.md](https://github.com/Romcoloop/AndroidAPS/blob/autoisf-steps/docs/autoisf-fork.md)
-  (English) · [docs/autoisf-fork.sk.md](https://github.com/Romcoloop/AndroidAPS/blob/autoisf-steps/docs/autoisf-fork.sk.md) (slovensky)
-* **Branch to build and install:** `autoisf-steps` (workflow "AutoISF APK" under Actions). It has
-  everything. `autoisf-custom` is the base, `autoisf-slots`, `autoisf-slots-2` and `autoisf-analysis`
-  are the steps in between. `autoisf-steps` adds step counting with the phone and three step rules
-  from OpenAPS AIMI (sport guard, SMB spacing after activity, effort protection), all off by default -
-  see chapter 8 of the manual.
+* **Manual:** [docs/autoisf-fork.md](https://github.com/Romcoloop/AAPS-Rhythm/blob/main/docs/autoisf-fork.md)
+  (English) · [docs/autoisf-fork.sk.md](https://github.com/Romcoloop/AAPS-Rhythm/blob/main/docs/autoisf-fork.sk.md) (slovensky)
+* **Branch to build and install:** `main` (workflow "AutoISF APK" under Actions). It also has step
+  counting with the phone and three step rules from OpenAPS AIMI (sport guard, SMB spacing after
+  activity, effort protection), all off by default - see chapter 8 of the manual.
 * Everything else is upstream AndroidAPS, see below. Use it at your own risk, as with any AAPS build.
 
 ## How this fork is checked
@@ -24,8 +22,7 @@ code and the manual before you use it.
 ## Credits and licence
 
 * **AutoISF** algorithm: ga-zelle (autoISF for AndroidAPS), as shipped in upstream AAPS.
-* **Step rules** (sport guard, SMB spacing after activity, effort protection, morning gate, branch
-  `autoisf-steps`): ported from **OpenAPS AIMI** by MTR93600 (https://github.com/MTR93600/OpenApsAIMI),
+* **Step rules** (sport guard, SMB spacing after activity, effort protection, morning gate): ported from **OpenAPS AIMI** by MTR93600 (https://github.com/MTR93600/OpenApsAIMI),
   file `DetermineBasalAIMI2.kt`. The thresholds are AIMI's; the port lives in
   `plugins/aps/.../openAPSAutoISF/steps/`.
 * **Blended BG** for bg_ISF: the idea comes from **Boost** (blended BG for the ISF ratio).
