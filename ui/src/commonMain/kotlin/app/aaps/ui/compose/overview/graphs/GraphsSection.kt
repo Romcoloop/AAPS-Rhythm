@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -61,6 +63,7 @@ import app.aaps.core.interfaces.overview.graph.SecondaryGraph
 import app.aaps.core.interfaces.overview.graph.SeriesType
 import app.aaps.core.keys.interfaces.TextRef
 import app.aaps.core.ui.CoreUiStrings
+import app.aaps.core.ui.compose.LeftToRight
 import app.aaps.core.ui.compose.LocalDateUtil
 import app.aaps.core.ui.compose.LocalDecimalFormatter
 import app.aaps.core.ui.compose.LocalProfileUtil
@@ -208,7 +211,7 @@ private val PREDICTION_SPOKEN_ORDER = listOf(
 private val BG_OVERLAY_SERIES = listOf(SeriesType.ACTIVITY, SeriesType.PREDICTIONS)
 
 /** Series types available for user-configurable secondary graphs (IOB + UI-only overlays excluded) */
-private val CONFIGURABLE_SERIES = SeriesType.entries.filter {
+internal val CONFIGURABLE_SERIES = SeriesType.entries.filter {
     it != SeriesType.IOB && it != SeriesType.PREDICTIONS
 }
 
@@ -479,17 +482,19 @@ fun GraphsSection(
             .closesInspectPillOnTouch(inspect)
     ) {
         // Treatment Belt Graph - running mode background + therapy events. A hold or a tap shows the pill.
-        TreatmentBeltGraphCompose(
-            viewModel = graphViewModel,
-            inspect = inspect,
-            scrollState = beltScrollState,
-            zoomState = beltZoomState,
-            derivedTimeRange = derivedTimeRange,
-            nowTimestamp = nowTimestamp,
-            modifier = Modifier
-                .fillMaxWidth()
-                .graphInspectTouch(inspect)
-        )
+        LeftToRight {
+            TreatmentBeltGraphCompose(
+                viewModel = graphViewModel,
+                inspect = inspect,
+                scrollState = beltScrollState,
+                zoomState = beltZoomState,
+                derivedTimeRange = derivedTimeRange,
+                nowTimestamp = nowTimestamp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .graphInspectTouch(inspect)
+            )
+        }
         // BG Graph - primary interactive graph
         var editingBgOverlays by remember { mutableStateOf(false) }
 
@@ -559,57 +564,59 @@ fun GraphsSection(
             if (predictionSentences.isEmpty()) null
             else stringResource(UiStrings.a11y_predictions, predictionSentences.joinToString(" "))
 
-        Box(
-            modifier = Modifier
-                .offset(y = (-16).dp)
-                .graphInspectTouch(inspect)
-        ) {
-            BgGraphCompose(
-                viewModel = graphViewModel,
-                bgOverlays = graphConfig.bgOverlays,
-                scrollState = bgScrollState,
-                zoomState = bgZoomState,
-                derivedTimeRange = derivedTimeRange,
-                nowTimestamp = nowTimestamp,
-                visibleTimeRange = bgVisibleTimeRange,
-                inspect = inspect,
+        LeftToRight {
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(graphConfig.bgHeight.dp)
-                    .onScrollOrZoomGesture(graphViewModel::onGraphInteraction)
-                    .then(
-                        // Merging, not a bare semantics block: a described node is reached by linear
-                        // screen-reader navigation only when it is a leaf or a merging parent. This one
-                        // has a child (the chart's own node, which carries no text), so unmerged it was
-                        // skipped in both directions and could be reached only as the first step from
-                        // the glucose circle or at the wrap point after the last tab - measured with
-                        // TalkBack on a phone. Merging absorbs that empty child, so the words do not
-                        // change and no action comes with it; the edit button is a clickable sibling and
-                        // stays its own stop.
-                        if (graphDescription != null) Modifier.semantics(mergeDescendants = true) { contentDescription = graphDescription }
-                        else Modifier
-                    )
-            )
-            if (!isSimpleMode) {
-                GraphEditButton(
-                    onClick = { editingBgOverlays = true },
-                    graphName = stringResource(CoreUiStrings.glucose),
+                    .offset(y = (-16).dp)
+                    .graphInspectTouch(inspect)
+            ) {
+                BgGraphCompose(
+                    viewModel = graphViewModel,
+                    bgOverlays = graphConfig.bgOverlays,
+                    scrollState = bgScrollState,
+                    zoomState = bgZoomState,
+                    derivedTimeRange = derivedTimeRange,
+                    nowTimestamp = nowTimestamp,
+                    visibleTimeRange = bgVisibleTimeRange,
+                    inspect = inspect,
                     modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(end = 4.dp, top = 2.dp)
+                        .fillMaxWidth()
+                        .height(graphConfig.bgHeight.dp)
+                        .onScrollOrZoomGesture(graphViewModel::onGraphInteraction)
+                        .then(
+                            // Merging, not a bare semantics block: a described node is reached by linear
+                            // screen-reader navigation only when it is a leaf or a merging parent. This one
+                            // has a child (the chart's own node, which carries no text), so unmerged it was
+                            // skipped in both directions and could be reached only as the first step from
+                            // the glucose circle or at the wrap point after the last tab - measured with
+                            // TalkBack on a phone. Merging absorbs that empty child, so the words do not
+                            // change and no action comes with it; the edit button is a clickable sibling and
+                            // stays its own stop.
+                            if (graphDescription != null) Modifier.semantics(mergeDescendants = true) { contentDescription = graphDescription }
+                            else Modifier
+                        )
+                )
+                if (!isSimpleMode) {
+                    GraphEditButton(
+                        onClick = { editingBgOverlays = true },
+                        graphName = stringResource(CoreUiStrings.glucose),
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(end = 4.dp, top = 2.dp)
+                    )
+                }
+                // Own composable, so a finger move does not recompose this section
+                GraphInspectOverlay(
+                    inspect = inspect,
+                    graphViewModel = graphViewModel,
+                    bgReadings = bgReadings,
+                    minTimestamp = derivedTimeRange?.first,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .offset(y = INSPECT_PILL_OFFSET)
+                        .padding(top = 2.dp, start = 36.dp, end = 36.dp)
                 )
             }
-            // Own composable, so a finger move does not recompose this section
-            GraphInspectOverlay(
-                inspect = inspect,
-                graphViewModel = graphViewModel,
-                bgReadings = bgReadings,
-                minTimestamp = derivedTimeRange?.first,
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .offset(y = INSPECT_PILL_OFFSET)
-                    .padding(top = 2.dp, start = 36.dp, end = 36.dp)
-            )
         }
         // A node of its own rather than more text on the graph above, so a listener reaches the
         // readings first and swipes once to decide whether she wants the forecast, instead of having
@@ -642,34 +649,36 @@ fun GraphsSection(
         }
         // Fixed IOB graph (Graph 1) with optional Activity overlay
         var editingIobOverlays by remember { mutableStateOf(false) }
-        Box(
-            modifier = Modifier
-                .pullUp(IOB_GRAPH_PULL_UP)
-                .graphInspectTouch(inspect)
-                .scrollsBgGraph(bgScrollForwarder, inspect, graphViewModel::onGraphInteraction)
-        ) {
-            SecondaryGraphCompose(
-                viewModel = graphViewModel,
-                seriesTypes = listOf(SeriesType.IOB),
-                scrollState = iobScrollState,
-                zoomState = iobZoomState,
-                derivedTimeRange = derivedTimeRange,
-                nowTimestamp = nowTimestamp,
-                activityOverlay = SeriesType.ACTIVITY in graphConfig.iobOverlays,
-                onVisibleRangeChanged = { iobVisibleRange = it },
-                inspect = inspect,
+        LeftToRight {
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(graphConfig.iobHeight.dp - REMOVED_TIME_LABELS_HEIGHT)
-            )
-            GraphNameRow(
-                name = stringResource(InterfacesStrings.values_with_slash, stringResource(CoreUiStrings.iob), stringResource(CoreUiStrings.basal_shortname)),
-                editName = stringResource(CoreUiStrings.iob),
-                onEdit = if (isSimpleMode) null else ({ editingIobOverlays = true }),
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 4.dp, bottom = GRAPH_NAME_BOTTOM_PADDING)
-            )
+                    .pullUp(IOB_GRAPH_PULL_UP)
+                    .graphInspectTouch(inspect)
+                    .scrollsBgGraph(bgScrollForwarder, inspect, graphViewModel::onGraphInteraction)
+            ) {
+                SecondaryGraphCompose(
+                    viewModel = graphViewModel,
+                    seriesTypes = listOf(SeriesType.IOB),
+                    scrollState = iobScrollState,
+                    zoomState = iobZoomState,
+                    derivedTimeRange = derivedTimeRange,
+                    nowTimestamp = nowTimestamp,
+                    activityOverlay = SeriesType.ACTIVITY in graphConfig.iobOverlays,
+                    onVisibleRangeChanged = { iobVisibleRange = it },
+                    inspect = inspect,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(graphConfig.iobHeight.dp - REMOVED_TIME_LABELS_HEIGHT)
+                )
+                GraphNameRow(
+                    name = stringResource(InterfacesStrings.values_with_slash, stringResource(CoreUiStrings.iob), stringResource(CoreUiStrings.basal_shortname)),
+                    editName = stringResource(CoreUiStrings.iob),
+                    onEdit = if (isSimpleMode) null else ({ editingIobOverlays = true }),
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 4.dp, bottom = GRAPH_NAME_BOTTOM_PADDING)
+                )
+            }
         }
         if (editingIobOverlays) {
             GraphSeriesBottomSheet(
@@ -693,32 +702,34 @@ fun GraphsSection(
         var editingGraphIndex by remember { mutableIntStateOf(-1) }
         for (i in 0 until activeCount) {
             val secondary = graphConfig.secondaryGraphs[i]
-            Box(
-                modifier = Modifier
-                    .pullUp(GRAPH_OVERLAP)
-                    .graphInspectTouch(inspect)
-                    .scrollsBgGraph(bgScrollForwarder, inspect, graphViewModel::onGraphInteraction)
-            ) {
-                SecondaryGraphCompose(
-                    viewModel = graphViewModel,
-                    inspect = inspect,
-                    seriesTypes = secondary.series,
-                    scrollState = secScrollStates[i],
-                    zoomState = secZoomStates[i],
-                    derivedTimeRange = derivedTimeRange,
-                    nowTimestamp = nowTimestamp,
+            LeftToRight {
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(secondary.height.dp - REMOVED_TIME_LABELS_HEIGHT)
-                )
-                GraphNameRow(
-                    name = seriesListLabel(secondary.series),
-                    editName = seriesListLabel(secondary.series),
-                    onEdit = if (isSimpleMode) null else ({ editingGraphIndex = i }),
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(end = 4.dp, bottom = GRAPH_NAME_BOTTOM_PADDING)
-                )
+                        .pullUp(GRAPH_OVERLAP)
+                        .graphInspectTouch(inspect)
+                        .scrollsBgGraph(bgScrollForwarder, inspect, graphViewModel::onGraphInteraction)
+                ) {
+                    SecondaryGraphCompose(
+                        viewModel = graphViewModel,
+                        inspect = inspect,
+                        seriesTypes = secondary.series,
+                        scrollState = secScrollStates[i],
+                        zoomState = secZoomStates[i],
+                        derivedTimeRange = derivedTimeRange,
+                        nowTimestamp = nowTimestamp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(secondary.height.dp - REMOVED_TIME_LABELS_HEIGHT)
+                    )
+                    GraphNameRow(
+                        name = seriesListLabel(secondary.series),
+                        editName = seriesListLabel(secondary.series),
+                        onEdit = if (isSimpleMode) null else ({ editingGraphIndex = i }),
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(end = 4.dp, bottom = GRAPH_NAME_BOTTOM_PADDING)
+                    )
+                }
             }
         }
         if (editingGraphIndex >= 0 && editingGraphIndex < activeCount) {
@@ -940,7 +951,7 @@ private fun GraphEditButton(
 /** Bottom sheet with toggleable FilterChips for series selection + optional remove button */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-private fun GraphSeriesBottomSheet(
+internal fun GraphSeriesBottomSheet(
     title: String,
     selectedSeries: List<SeriesType>,
     availableSeries: List<SeriesType>,
@@ -955,9 +966,12 @@ private fun GraphSeriesBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState
     ) {
+        // Scrolls like the other sheets. Without it a window shorter than the content (large font, small
+        // screen, landscape, keyboard open) cut off the last row of chips, and the sheet could jump (#5478).
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
             Row(

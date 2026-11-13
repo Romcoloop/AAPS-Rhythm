@@ -22,12 +22,14 @@ import app.aaps.core.data.time.T
 import app.aaps.core.data.ue.Action
 import app.aaps.core.data.ue.Sources
 import app.aaps.core.interfaces.configuration.ExternalOptions
+import app.aaps.core.interfaces.configuration.PLUGIN_SETTLE_WAIT
 import app.aaps.core.interfaces.db.VacuumResult
 import app.aaps.core.interfaces.di.MetroMemberInjector
 import app.aaps.core.interfaces.logging.LTag
 import app.aaps.core.interfaces.notifications.NotificationAction
 import app.aaps.core.interfaces.notifications.NotificationId
 import app.aaps.core.interfaces.notifications.NotificationLevel
+import app.aaps.core.interfaces.pump.emulator.PumpEmulators
 import app.aaps.core.interfaces.rx.events.EventAppInitialized
 import app.aaps.core.interfaces.tempTargets.toJson
 import app.aaps.core.keys.BooleanKey
@@ -37,6 +39,7 @@ import app.aaps.core.keys.StringKey
 import app.aaps.core.keys.StringNonKey
 import app.aaps.core.keys.interfaces.TextRef
 import app.aaps.core.ui.compose.MetroViewModelFactoryOwner
+import app.aaps.core.utils.gitRemoteShort
 import app.aaps.database.di.DatabaseConfig
 import app.aaps.di.ExternalOptionsOverride
 import app.aaps.di.GeneratedStringOwners
@@ -93,12 +96,6 @@ class MainApp : Application(), MetroMemberInjector, MetroViewModelFactoryOwner, 
 
     companion object {
 
-        /**
-         * How long start up waits for the plugins to finish starting before carrying on regardless.
-         * Matches `ConfigBuilderImpl.PLUGIN_SETTLE_WAIT`, which bounds the same wait on the import path -
-         * the two start paths should behave the same, which is the whole point of waiting here at all.
-         */
-        private val PLUGIN_START_WAIT = 30.seconds
     }
 
     // When the settings cannot be opened, ComposeMainActivity only hands over to SettingsUnreadableActivity and
@@ -113,15 +110,16 @@ class MainApp : Application(), MetroMemberInjector, MetroViewModelFactoryOwner, 
     /**
      * `by lazy` so nothing is resolved before `onCreate` runs - the graph reaches Android services, and
      * an Application field initialiser runs before the framework is ready for that.
-     * The last two arguments are the only things an instrumented test does differently; see
-     * `AppRootGraph.Factory`. Production wants the real database and no forced options.
+     * The last three arguments are the only things an instrumented test does differently; see
+     * `AppRootGraph.Factory`. Production wants the real database, no forced options and new emulated pumps.
      */
     private val metroGraphs by lazy {
         MetroGraphs(
             context = this,
             memberInjector = this,
             databaseConfig = DatabaseConfig.PRODUCTION,
-            externalOptionsOverride = ExternalOptionsOverride.NONE
+            externalOptionsOverride = ExternalOptionsOverride.NONE,
+            pumpEmulators = PumpEmulators()
         )
     }
     // WorkManager on-demand initialization. `MetroWorkerFactory` builds every worker in the app; what
@@ -287,8 +285,8 @@ class MainApp : Application(), MetroMemberInjector, MetroViewModelFactoryOwner, 
                 // for the active pump on the next line. Bounded for the same reason applyConfiguration
                 // bounds it: a driver whose onStart will not settle must not hold up start up for ever.
                 val started = configBuilder.initialize()
-                if (withTimeoutOrNull(PLUGIN_START_WAIT) { started.joinAll() } == null)
-                    aapsLogger.warn(LTag.CORE, "Plugins did not finish starting within $PLUGIN_START_WAIT")
+                if (withTimeoutOrNull(PLUGIN_SETTLE_WAIT) { started.joinAll() } == null)
+                    aapsLogger.warn(LTag.CORE, "Plugins did not finish starting within $PLUGIN_SETTLE_WAIT")
 
                 // Running-mode reconciler + expiry scheduler. Start after plugins are registered:
                 // the reconciler's startup-drift check reads the active pump, which requires
@@ -528,15 +526,9 @@ class MainApp : Application(), MetroMemberInjector, MetroViewModelFactoryOwner, 
         aapsLogger.debug("doInit end")
     }
 
-    /** The build this is, in short form - "github:owner/repo". */
-    private val gitRemoteShort: String
-        get() = config.REMOTE.lowercase(Locale.getDefault())
-            .replace("https://", "")
-            .replace("http://", "")
-            .replace(".git", "")
-            .replace(".com/", ":")
-            .replace(".org/", ":")
-            .replace(".net/", ":")
+    /** The build this is, in short form - "github:owner/repo". Shared with iOS, which sends the same key. */
+    private val remoteShort: String
+        get() = gitRemoteShort(config.REMOTE)
 
     /**
      * Which build is running. All of it is known from BuildConfig before anything starts, so it is set as
@@ -548,7 +540,7 @@ class MainApp : Application(), MetroMemberInjector, MetroViewModelFactoryOwner, 
             setCustomKey("Version", config.VERSION_NAME)
             setCustomKey("BuildType", config.BUILD_TYPE)
             setCustomKey("BuildFlavor", config.FLAVOR)
-            setCustomKey("Remote", gitRemoteShort)
+            setCustomKey("Remote", remoteShort)
             setCustomKey("Committed", config.COMMITTED)
         }
     }
@@ -560,7 +552,7 @@ class MainApp : Application(), MetroMemberInjector, MetroViewModelFactoryOwner, 
         fabricPrivacy.setUserProperty("Language", preferences.getIfExists(StringKey.GeneralLanguage) ?: Locale.getDefault().language)
         fabricPrivacy.setUserProperty("Version", config.VERSION_NAME)
         fabricPrivacy.setUserProperty("HEAD", BuildConfig.BUILDVERSION)
-        fabricPrivacy.setUserProperty("Remote", gitRemoteShort)
+        fabricPrivacy.setUserProperty("Remote", remoteShort)
         val hashes: List<String> = signatureVerifierPlugin.shortHashes()
         if (hashes.isNotEmpty()) fabricPrivacy.setUserProperty("Hash", hashes[0])
         activePlugin.activePumpInternal.let { fabricPrivacy.setUserProperty("Pump", it::class.java.simpleName) }
