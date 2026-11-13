@@ -390,6 +390,9 @@ The switch **SMB always with any sensor** takes this limit off. It is in the Aut
 OpenAPS SMB settings), above "Enable SMB always", and it is **off by default**. This is not a change of
 AutoISF, it changes a safety rule of AAPS.
 
+- **It works at once:** "Enable SMB always" and "Enable SMB after carbs" are on by default, and with a
+  sensor that is not on the list they were hidden until now. So SMB always is active from the moment you
+  turn the switch on. Look at the two settings right after, and turn off the one you do not want.
 - **Risk:** a sensor without filtering can show a jump that is not real. An SMB given for it can not be
   taken back, as a temp basal can. That can end in a low.
 - **Before you turn it on:** know your sensor well, and use glucose smoothing (exponential or average

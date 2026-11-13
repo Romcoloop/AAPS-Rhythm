@@ -389,6 +389,9 @@ Prepínač **SMB always with any sensor** toto obmedzenie zruší. Je v nastaven
 OpenAPS SMB), nad „Enable SMB always“, a je **predvolene vypnutý**. Nie je to zmena AutoISF, mení
 bezpečnostné pravidlo AAPS.
 
+- **Účinkuje hneď:** „Enable SMB always“ a „Enable SMB after carbs“ sú predvolene zapnuté a pri senzore
+  mimo zoznamu boli doteraz skryté. SMB vždy je teda aktívne od chvíle, keď prepínač zapneš. Hneď potom
+  si obe nastavenia pozri a vypni to, ktoré nechceš.
 - **Riziko:** senzor bez vyhladzovania môže ukázať skok, ktorý nie je skutočný. SMB podaný kvôli nemu sa
   nedá vziať späť tak ako dočasný bazál. Môže to skončiť hypoglykémiou.
 - **Pred zapnutím:** svoj senzor treba dobre poznať a mať zapnuté vyhladzovanie glykémie (exponenciálne

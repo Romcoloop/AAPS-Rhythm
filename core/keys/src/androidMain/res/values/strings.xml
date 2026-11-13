@@ -51,7 +51,7 @@
     <string name="pref_title_aps_use_smb_with_high_tt">Enable SMB with high temp target</string>
     <string name="pref_summary_aps_use_smb_with_high_tt">Allow SMB when high temporary target is active.</string>
     <string name="pref_title_aps_use_smb_any_sensor">SMB always with any sensor</string>
-    <string name="pref_summary_aps_use_smb_any_sensor">Lets the settings Enable SMB always and Enable SMB after carbs work also with a glucose sensor without advanced filtering. Such a sensor can show a jump that is not real, and an SMB given for it can not be taken back. Turn it on only when you know your sensor well, best with glucose smoothing on.</string>
+    <string name="pref_summary_aps_use_smb_any_sensor">Lets the settings Enable SMB always and Enable SMB after carbs work also with a glucose sensor without advanced filtering. Both are on unless you turned them off, so SMB always can start as soon as you turn this on. Such a sensor can show a jump that is not real, and an SMB given for it can not be taken back. Turn it on only when you know your sensor well, best with glucose smoothing on.</string>
     <string name="pref_title_aps_use_smb_always">Enable SMB always</string>
     <string name="pref_summary_aps_use_smb_always">Enable SMB in all conditions regardless of bolus or COB.</string>
     <string name="pref_title_aps_use_smb_with_cob">Enable SMB with COB</string>
