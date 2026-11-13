@@ -1,6 +1,6 @@
 # AutoISF fork: blended BG, časy jedál, sloty a ladiaca karta
 
-AAPS-Rhythm, zostavenie AndroidAPS (github.com/Romcoloop/AAPS-Rhythm), mení plugin **OpenAPS AutoISF** na štyroch
+Cadence, zostavenie AndroidAPS (github.com/Romcoloop/Cadence), mení plugin **OpenAPS AutoISF** na štyroch
 miestach. Všetko ostatné je upstream AndroidAPS.
 
 | Čo | Kde v appke | Vypnuté znamená |

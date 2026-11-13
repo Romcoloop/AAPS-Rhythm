@@ -1,12 +1,12 @@
-# AAPS-Rhythm: AutoISF with slots and a tuning card
+# Cadence: AutoISF with slots and a tuning card
 
-AAPS-Rhythm is a build of AndroidAPS with four changes to the **OpenAPS AutoISF** plugin: blended BG for
+Cadence is a build of AndroidAPS with four changes to the **OpenAPS AutoISF** plugin: blended BG for
 bg_ISF, meal times, **slots** (own AutoISF and SMB values for each
 meal, for the weekend and for the night) and an **AutoISF log analysis** card that suggests settings
 from the phone's logs. Nothing changes a value on its own.
 
-* **Manual:** [docs/autoisf-fork.md](https://github.com/Romcoloop/AAPS-Rhythm/blob/main/docs/autoisf-fork.md)
-  (English) · [docs/autoisf-fork.sk.md](https://github.com/Romcoloop/AAPS-Rhythm/blob/main/docs/autoisf-fork.sk.md) (slovensky)
+* **Manual:** [docs/autoisf-fork.md](https://github.com/Romcoloop/Cadence/blob/main/docs/autoisf-fork.md)
+  (English) · [docs/autoisf-fork.sk.md](https://github.com/Romcoloop/Cadence/blob/main/docs/autoisf-fork.sk.md) (slovensky)
 * **Branch to build and install:** `main` (workflow "AutoISF APK" under Actions). It also has step
   counting with the phone and three step rules from OpenAPS AIMI (sport guard, SMB spacing after
   activity, effort protection), all off by default - see chapter 8 of the manual.
