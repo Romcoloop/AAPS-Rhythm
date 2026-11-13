@@ -1,6 +1,6 @@
 # AutoISF fork: blended BG, meal times, slots and the tuning card
 
-AAPS-Rhythm, a build of AndroidAPS (github.com/Romcoloop/AAPS-Rhythm), changes the **OpenAPS AutoISF** plugin in
+Cadence, a build of AndroidAPS (github.com/Romcoloop/Cadence), changes the **OpenAPS AutoISF** plugin in
 four places. Everything else is upstream AndroidAPS.
 
 | What | Where in the app | Off means |
